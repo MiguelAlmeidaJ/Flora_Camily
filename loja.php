@@ -44,7 +44,7 @@ $products = $stmt->fetchAll();
                         <div class="p-4">
                             <div class="product-category mb-2"><?= e($product['category']) ?></div>
                             <h2 class="product-title mb-2"><a class="text-decoration-none" href="produto.php?id=<?= (int) $product['id'] ?>"><?= e($product['name']) ?></a></h2>
-                            <p class="text-secondary small mb-3"><?= e(mb_strimwidth((string) $product['description'], 0, 120, '...')) ?></p>
+                            <p class="text-secondary small mb-3"><?= e(excerpt((string) $product['description'], 120)) ?></p>
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <span class="product-price"><?= money((float) $product['price']) ?></span>
                                 <a href="produto.php?id=<?= (int) $product['id'] ?>" class="btn btn-sm btn-outline-brand">Ver detalhes</a>
