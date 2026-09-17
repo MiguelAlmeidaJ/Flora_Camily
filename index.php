@@ -19,7 +19,7 @@ $products = $stmt->fetchAll();
             </div>
             <div class="col-lg-6">
                 <div class="hero-logo-wrap">
-                    <img src="assets/img/logo.png" class="hero-logo" alt="Logo Flora Camily">
+                    <img src="assets/img/logo.svg" class="hero-logo" alt="Logo Flora Camily">
                 </div>
             </div>
         </div>
@@ -67,7 +67,7 @@ $products = $stmt->fetchAll();
                         <div class="p-4">
                             <div class="product-category mb-2"><?= e($product['category']) ?></div>
                             <h3 class="product-title mb-2"><a class="text-decoration-none" href="produto.php?id=<?= (int) $product['id'] ?>"><?= e($product['name']) ?></a></h3>
-                            <p class="text-secondary small mb-3"><?= e(mb_strimwidth((string) $product['description'], 0, 115, '...')) ?></p>
+                            <p class="text-secondary small mb-3"><?= e(excerpt((string) $product['description'], 115)) ?></p>
                             <div class="d-flex justify-content-between align-items-center gap-3">
                                 <span class="product-price"><?= money((float) $product['price']) ?></span>
                                 <a href="produto.php?id=<?= (int) $product['id'] ?>" class="btn btn-sm btn-outline-brand">Detalhes</a>
