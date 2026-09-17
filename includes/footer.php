@@ -16,11 +16,11 @@
                 <h6>Navegação</h6>
                 <a href="index.php">Início</a>
                 <a href="loja.php">Homenagens</a>
-                <a href="carrinho.php">Carrinho</a>
+                <?php if (cartCount() > 0): ?><a href="carrinho.php">Carrinho</a><?php endif; ?>
             </div>
             <div class="col-6 col-lg-4">
                 <h6>Atendimento</h6>
-                <a href="https://wa.me/<?= e(WHATSAPP_NUMBER) ?>" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Falar pelo WhatsApp</a>
+                <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Falar pelo WhatsApp</a>
                 <span class="footer-text small d-block mt-2">A equipe acompanha cada pedido da análise até a entrega.</span>
             </div>
         </div>
@@ -31,6 +31,19 @@
         </div>
     </div>
 </footer>
+
+<div class="floating-actions" aria-label="Ações rápidas">
+    <?php if (cartCount() > 0): ?>
+        <a href="carrinho.php" class="floating-cart" aria-label="Abrir carrinho com <?= cartCount() ?> item<?= cartCount() === 1 ? '' : 's' ?>">
+            <span class="floating-cart-icon"><i class="bi bi-bag-heart"></i><span><?= cartCount() ?></span></span>
+            <span class="floating-cart-text">Ver carrinho</span>
+        </a>
+    <?php endif; ?>
+    <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener" class="floating-whatsapp" aria-label="Comprar pelo WhatsApp" title="Comprar pelo WhatsApp">
+        <i class="bi bi-whatsapp"></i>
+    </a>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
