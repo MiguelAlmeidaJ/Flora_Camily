@@ -11,7 +11,7 @@ $products = $stmt->fetchAll();
             <div class="col-lg-6">
                 <span class="eyebrow"><i class="bi bi-flower1"></i> Flores que fazem histórias</span>
                 <h1 class="mt-3 mb-4">Uma homenagem feita com cuidado em cada detalhe.</h1>
-                <p class="mb-4">Escolha sua homenagem floral com tranquilidade. Você monta o pedido pelo site e finaliza o atendimento diretamente pelo WhatsApp.</p>
+                <p class="mb-4">Escolha sua homenagem floral com tranquilidade, informe os dados da entrega e envie o pedido para nossa equipe analisar e preparar tudo com cuidado.</p>
                 <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start">
                     <a href="loja.php" class="btn btn-brand btn-lg px-4">Ver homenagens</a>
                     <a href="https://wa.me/<?= e(WHATSAPP_NUMBER) ?>" target="_blank" rel="noopener" class="btn btn-outline-brand btn-lg px-4"><i class="bi bi-whatsapp me-2"></i>Falar com a equipe</a>
@@ -30,16 +30,16 @@ $products = $stmt->fetchAll();
     <div class="container">
         <div class="row g-4">
             <div class="col-md-4 d-flex gap-3 align-items-center">
-                <div class="info-icon"><i class="bi bi-chat-heart"></i></div>
-                <div><strong>Atendimento humano</strong><div class="small opacity-75">Finalização pelo WhatsApp</div></div>
+                <div class="info-icon"><i class="bi bi-clipboard-check"></i></div>
+                <div><strong>Análise pela equipe</strong><div class="small opacity-75">Cada pedido é conferido antes da preparação</div></div>
             </div>
             <div class="col-md-4 d-flex gap-3 align-items-center">
                 <div class="info-icon"><i class="bi bi-flower2"></i></div>
                 <div><strong>Homenagens personalizadas</strong><div class="small opacity-75">Mensagem de faixa e observações</div></div>
             </div>
             <div class="col-md-4 d-flex gap-3 align-items-center">
-                <div class="info-icon"><i class="bi bi-geo-alt"></i></div>
-                <div><strong>Entrega combinada</strong><div class="small opacity-75">Local e horário confirmados no atendimento</div></div>
+                <div class="info-icon"><i class="bi bi-truck"></i></div>
+                <div><strong>Entrega própria</strong><div class="small opacity-75">A Flora Camily cuida da entrega até o destino</div></div>
             </div>
         </div>
     </div>
@@ -98,14 +98,14 @@ $products = $stmt->fetchAll();
                 <div class="feature-card">
                     <i class="bi bi-2-circle"></i>
                     <h3 class="h4 mt-3">Informe os detalhes</h3>
-                    <p class="text-secondary mb-0">Preencha local, horário desejado, mensagem da faixa e observações.</p>
+                    <p class="text-secondary mb-0">Preencha local, data, horário, mensagem da faixa e observações.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="feature-card">
                     <i class="bi bi-3-circle"></i>
-                    <h3 class="h4 mt-3">Finalize no WhatsApp</h3>
-                    <p class="text-secondary mb-0">A equipe recebe o resumo do pedido para confirmar disponibilidade, entrega e pagamento.</p>
+                    <h3 class="h4 mt-3">Envie seu pedido</h3>
+                    <p class="text-secondary mb-0">A equipe analisa a solicitação, confirma o frete e entra em contato apenas se algum ajuste for necessário.</p>
                 </div>
             </div>
         </div>
