@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = (string) ($_POST['action'] ?? '');
 
-    if ($action === 'add') {
+    if (in_array($action, ['add', 'buy_now'], true)) {
         $productId = (int) ($_POST['product_id'] ?? 0);
         $qty = max(1, min(20, (int) ($_POST['qty'] ?? 1)));
 
@@ -13,6 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$productId]);
         if ($stmt->fetch()) {
             $_SESSION['cart'][$productId] = min(20, ((int) ($_SESSION['cart'][$productId] ?? 0)) + $qty);
+        }
+
+        if ($action === 'buy_now') {
+            redirect('checkout.php');
         }
         redirect('carrinho.php');
     }
@@ -70,7 +74,7 @@ $items = cartProducts();
                                     <div class="d-flex flex-column flex-sm-row gap-3 align-items-sm-center">
                                         <img src="<?= e(productImage($item['image'])) ?>" alt="<?= e($item['name']) ?>" class="cart-thumb">
                                         <div class="flex-grow-1">
-                                            <div class="product-category mb-1"><?= e($item['category']) ?></div>
+                                            <div class="product-category mb-1"><?= e(productCategoryName($item)) ?></div>
                                             <h2 class="h4 mb-1"><?= e($item['name']) ?></h2>
                                             <div class="small text-secondary"><?= money((float) $item['price']) ?> cada</div>
                                         </div>
@@ -99,11 +103,11 @@ $items = cartProducts();
                         <div class="d-flex justify-content-between mb-2"><span class="text-secondary">Itens</span><span><?= cartCount() ?></span></div>
                         <hr>
                         <div class="d-flex justify-content-between align-items-end mb-4">
-                            <strong>Total</strong>
+                            <strong>Total dos produtos</strong>
                             <strong class="fs-4 text-nowrap"><?= money(cartTotal()) ?></strong>
                         </div>
-                        <a href="checkout.php" class="btn btn-brand btn-lg w-100">Continuar <i class="bi bi-arrow-right ms-1"></i></a>
-                        <p class="small text-secondary mt-3 mb-0">O pagamento e a entrega serão combinados no atendimento pelo WhatsApp.</p>
+                        <a href="checkout.php" class="btn btn-brand btn-lg w-100">Finalizar compra <i class="bi bi-arrow-right ms-1"></i></a>
+                        <p class="small text-secondary mt-3 mb-0">O pedido será enviado para análise. O frete será definido manualmente pela equipe da Flora Camily.</p>
                     </div>
                 </div>
             </div>
