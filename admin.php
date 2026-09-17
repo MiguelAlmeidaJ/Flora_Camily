@@ -46,7 +46,7 @@ if (!adminLoggedIn()):
         <div class="row justify-content-center">
             <div class="col-md-7 col-lg-5 col-xl-4">
                 <div class="admin-card p-4 p-md-5 shadow-sm text-center">
-                    <img src="assets/img/logo.png" alt="Flora Camily" class="admin-logo mb-3">
+                    <img src="assets/img/logo.svg" alt="Flora Camily" class="admin-logo mb-3">
                     <h1 class="h2 mb-1">Área administrativa</h1>
                     <p class="text-secondary small mb-4">Gerencie produtos e acompanhe solicitações.</p>
                     <?php if ($loginError): ?><div class="alert alert-danger text-start"><?= e($loginError) ?></div><?php endif; ?>
@@ -209,7 +209,7 @@ $orders = db()->query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 20')-
 <body class="admin-shell">
 <nav class="navbar bg-white border-bottom sticky-top">
     <div class="container py-2">
-        <a href="admin.php" class="navbar-brand d-flex align-items-center gap-2"><img src="assets/img/logo.png" class="brand-logo" alt=""><span class="brand-name">Flora Camily</span></a>
+        <a href="admin.php" class="navbar-brand d-flex align-items-center gap-2"><img src="assets/img/logo.svg" class="brand-logo" alt=""><span class="brand-name">Flora Camily</span></a>
         <div class="d-flex gap-2">
             <a href="index.php" target="_blank" class="btn btn-light border rounded-pill"><i class="bi bi-box-arrow-up-right"></i><span class="d-none d-sm-inline ms-1">Ver site</span></a>
             <a href="admin.php?logout=1" class="btn btn-outline-danger rounded-pill"><i class="bi bi-box-arrow-right"></i><span class="d-none d-sm-inline ms-1">Sair</span></a>
