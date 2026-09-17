@@ -6,11 +6,15 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
+date_default_timezone_set('America/Sao_Paulo');
+
 const SITE_NAME = 'Flora Camily';
 const SITE_TAGLINE = 'Flores que fazem histórias';
 
 $settings = [
     'whatsapp_number' => '5532999999999',
+    'store_email' => '',
+    'from_email' => '',
     'db' => [
         'host' => 'localhost',
         'name' => 'flora_camily',
@@ -28,6 +32,8 @@ if (is_file($localConfigFile)) {
 }
 
 define('WHATSAPP_NUMBER', (string) preg_replace('/\D+/', '', (string) $settings['whatsapp_number']));
+define('STORE_EMAIL', trim((string) $settings['store_email']));
+define('FROM_EMAIL', trim((string) $settings['from_email']));
 define('DB_HOST', (string) $settings['db']['host']);
 define('DB_NAME', (string) $settings['db']['name']);
 define('DB_USER', (string) $settings['db']['user']);
@@ -171,4 +177,97 @@ function productImage(?string $image): string
     }
 
     return 'assets/img/logo.svg';
+}
+
+function orderStatusOptions(): array
+{
+    return [
+        'novo' => 'Novo pedido',
+        'aguardando_ajuste' => 'Aguardando ajuste',
+        'em_preparacao' => 'Em preparação',
+        'em_entrega' => 'Em entrega',
+        'entregue' => 'Entregue',
+        'cancelado' => 'Cancelado',
+    ];
+}
+
+function orderStatusLabel(string $status): string
+{
+    return orderStatusOptions()[$status] ?? ucfirst(str_replace('_', ' ', $status));
+}
+
+function orderStatusClass(string $status): string
+{
+    return match ($status) {
+        'novo' => 'text-bg-danger',
+        'aguardando_ajuste' => 'text-bg-warning',
+        'em_preparacao' => 'text-bg-primary',
+        'em_entrega' => 'text-bg-info',
+        'entregue' => 'text-bg-success',
+        'cancelado' => 'text-bg-secondary',
+        default => 'text-bg-light',
+    };
+}
+
+function customerWhatsAppUrl(string $phone, int $orderId): string
+{
+    $digits = preg_replace('/\D+/', '', $phone) ?: '';
+    if ($digits === '') {
+        return '#';
+    }
+
+    if (!str_starts_with($digits, '55')) {
+        $digits = '55' . $digits;
+    }
+
+    $message = 'Olá! Somos da Flora Camily e estamos entrando em contato sobre o pedido #' . $orderId . '.';
+    return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
+}
+
+function sendNewOrderEmail(array $order, array $items): bool
+{
+    if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $orderId = (int) ($order['id'] ?? 0);
+    $subject = 'Novo pedido #' . $orderId . ' - Flora Camily';
+
+    $lines = [
+        'Um novo pedido foi realizado no site da Flora Camily.',
+        '',
+        'Pedido: #' . $orderId,
+        'Cliente: ' . ($order['customer_name'] ?? ''),
+        'Telefone: ' . ($order['customer_phone'] ?? ''),
+        'E-mail: ' . ($order['customer_email'] ?? ''),
+        'Homenageado(a): ' . ($order['honoree_name'] ?? ''),
+        'Entrega: ' . trim(($order['city'] ?? '') . '/' . ($order['state'] ?? '')),
+        'Local: ' . ($order['delivery_place'] ?? ''),
+        'Data: ' . ($order['delivery_date'] ?? ''),
+        'Hora: ' . ($order['delivery_time'] ?? ''),
+        '',
+        'Itens:',
+    ];
+
+    foreach ($items as $item) {
+        $lines[] = '- ' . (int) $item['qty'] . 'x ' . $item['name'] . ' — ' . money((float) $item['subtotal']);
+    }
+
+    $lines[] = '';
+    $lines[] = 'Subtotal dos produtos: ' . money((float) ($order['products_total'] ?? 0));
+    $lines[] = 'Frete: a definir pela equipe';
+    $lines[] = '';
+    $lines[] = 'Acesse o painel administrativo para analisar e atualizar o pedido.';
+
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-Type: text/plain; charset=UTF-8',
+    ];
+
+    if (FROM_EMAIL !== '' && filter_var(FROM_EMAIL, FILTER_VALIDATE_EMAIL)) {
+        $headers[] = 'From: Flora Camily <' . FROM_EMAIL . '>';
+        $headers[] = 'Reply-To: ' . FROM_EMAIL;
+    }
+
+    return @mail(STORE_EMAIL, $subject, implode("\r\n", $lines), implode("\r\n", $headers));
 }
