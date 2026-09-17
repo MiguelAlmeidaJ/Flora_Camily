@@ -90,6 +90,26 @@ function excerpt(?string $text, int $limit = 115): string
     return strlen($text) > $limit ? rtrim(substr($text, 0, $limit)) . '...' : $text;
 }
 
+function slugify(string $text): string
+{
+    $text = trim($text);
+    if ($text === '') {
+        return '';
+    }
+
+    $normalized = $text;
+    if (function_exists('iconv')) {
+        $converted = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+        if ($converted !== false) {
+            $normalized = $converted;
+        }
+    }
+
+    $normalized = strtolower($normalized);
+    $normalized = preg_replace('/[^a-z0-9]+/', '-', $normalized) ?? '';
+    return trim($normalized, '-');
+}
+
 function csrfToken(): string
 {
     if (empty($_SESSION['csrf_token'])) {
@@ -136,7 +156,12 @@ function cartProducts(): array
     }
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = db()->prepare("SELECT * FROM products WHERE id IN ($placeholders) AND active = 1");
+    $stmt = db()->prepare(
+        "SELECT p.*, c.name AS category_name, c.slug AS category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.id IN ($placeholders) AND p.active = 1"
+    );
     $stmt->execute($ids);
 
     $products = [];
@@ -159,9 +184,108 @@ function cartTotal(): float
     );
 }
 
+function productCategoryName(array $product): string
+{
+    $name = trim((string) ($product['category_name'] ?? ''));
+    if ($name !== '') {
+        return $name;
+    }
+
+    return trim((string) ($product['category'] ?? 'Homenagens florais')) ?: 'Homenagens florais';
+}
+
+function crownCategories(bool $onlyActive = true): array
+{
+    static $activeCache = null;
+    static $allCache = null;
+
+    if ($onlyActive && is_array($activeCache)) {
+        return $activeCache;
+    }
+    if (!$onlyActive && is_array($allCache)) {
+        return $allCache;
+    }
+
+    $sql = 'SELECT * FROM categories';
+    if ($onlyActive) {
+        $sql .= ' WHERE active = 1';
+    }
+    $sql .= ' ORDER BY sort_order ASC, name ASC';
+
+    $rows = db()->query($sql)->fetchAll();
+    if ($onlyActive) {
+        $activeCache = $rows;
+    } else {
+        $allCache = $rows;
+    }
+
+    return $rows;
+}
+
 function adminLoggedIn(): bool
 {
     return !empty($_SESSION['admin_id']);
+}
+
+function adminRole(): string
+{
+    if (!adminLoggedIn()) {
+        return '';
+    }
+
+    if (!empty($_SESSION['admin_role'])) {
+        return (string) $_SESSION['admin_role'];
+    }
+
+    try {
+        $stmt = db()->prepare('SELECT role FROM admin_users WHERE id = ? LIMIT 1');
+        $stmt->execute([(int) $_SESSION['admin_id']]);
+        $role = (string) ($stmt->fetchColumn() ?: 'admin');
+        $_SESSION['admin_role'] = $role;
+        return $role;
+    } catch (Throwable $e) {
+        return 'admin';
+    }
+}
+
+function isDev(): bool
+{
+    return adminRole() === 'dev';
+}
+
+function requireAdmin(): void
+{
+    if (!adminLoggedIn()) {
+        redirect('admin.php');
+    }
+}
+
+function requireDev(): void
+{
+    requireAdmin();
+    if (!isDev()) {
+        http_response_code(403);
+        exit('Acesso restrito ao perfil dev.');
+    }
+}
+
+function appLog(string $action, array $context = [], string $level = 'info'): void
+{
+    try {
+        $stmt = db()->prepare(
+            'INSERT INTO app_logs (level, action, context_json, actor_user_id, actor_username, ip_address) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            substr($level, 0, 20),
+            substr($action, 0, 120),
+            $context ? json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null,
+            !empty($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null,
+            !empty($_SESSION['admin_username']) ? (string) $_SESSION['admin_username'] : null,
+            substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45) ?: null,
+        ]);
+    } catch (Throwable $e) {
+        // O log nunca deve interromper o fluxo principal da loja.
+    }
 }
 
 function redirect(string $url): never
@@ -177,6 +301,11 @@ function productImage(?string $image): string
     }
 
     return 'assets/img/logo.svg';
+}
+
+function storeWhatsAppUrl(string $message = 'Olá! Gostaria de comprar uma homenagem floral na Flora Camily.'): string
+{
+    return 'https://wa.me/' . WHATSAPP_NUMBER . '?text=' . rawurlencode($message);
 }
 
 function orderStatusOptions(): array
