@@ -2,15 +2,26 @@
 $pageTitle = 'Homenagens | Flora Camily';
 require __DIR__ . '/includes/header.php';
 
-$category = trim((string) ($_GET['categoria'] ?? ''));
+$categorySlug = trim((string) ($_GET['categoria'] ?? ''));
+$categories = crownCategories();
 
-$categories = db()->query("SELECT DISTINCT category FROM products WHERE active = 1 ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
-
-if ($category !== '') {
-    $stmt = db()->prepare('SELECT * FROM products WHERE active = 1 AND category = ? ORDER BY featured DESC, created_at DESC');
-    $stmt->execute([$category]);
+if ($categorySlug !== '') {
+    $stmt = db()->prepare(
+        'SELECT p.*, c.name AS category_name, c.slug AS category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.active = 1 AND c.slug = ? AND c.active = 1
+         ORDER BY p.featured DESC, p.created_at DESC'
+    );
+    $stmt->execute([$categorySlug]);
 } else {
-    $stmt = db()->query('SELECT * FROM products WHERE active = 1 ORDER BY featured DESC, created_at DESC');
+    $stmt = db()->query(
+        'SELECT p.*, c.name AS category_name, c.slug AS category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.active = 1
+         ORDER BY p.featured DESC, p.created_at DESC'
+    );
 }
 $products = $stmt->fetchAll();
 ?>
@@ -26,9 +37,9 @@ $products = $stmt->fetchAll();
     <div class="container">
         <?php if ($categories): ?>
             <div class="d-flex flex-wrap gap-2 mb-4">
-                <a href="loja.php" class="btn btn-sm <?= $category === '' ? 'btn-brand' : 'btn-outline-brand' ?>">Todas</a>
+                <a href="loja.php" class="btn btn-sm <?= $categorySlug === '' ? 'btn-brand' : 'btn-outline-brand' ?>">Todas</a>
                 <?php foreach ($categories as $item): ?>
-                    <a href="loja.php?categoria=<?= urlencode((string) $item) ?>" class="btn btn-sm <?= $category === $item ? 'btn-brand' : 'btn-outline-brand' ?>"><?= e((string) $item) ?></a>
+                    <a href="loja.php?categoria=<?= urlencode((string) $item['slug']) ?>" class="btn btn-sm <?= $categorySlug === $item['slug'] ? 'btn-brand' : 'btn-outline-brand' ?>"><?= e((string) $item['name']) ?></a>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
@@ -42,7 +53,7 @@ $products = $stmt->fetchAll();
                             <img src="<?= e(productImage($product['image'])) ?>" alt="<?= e($product['name']) ?>" class="product-image <?= $fallback ? 'logo-fallback' : '' ?>">
                         </a>
                         <div class="p-4">
-                            <div class="product-category mb-2"><?= e($product['category']) ?></div>
+                            <div class="product-category mb-2"><?= e(productCategoryName($product)) ?></div>
                             <h2 class="product-title mb-2"><a class="text-decoration-none" href="produto.php?id=<?= (int) $product['id'] ?>"><?= e($product['name']) ?></a></h2>
                             <p class="text-secondary small mb-3"><?= e(excerpt((string) $product['description'], 120)) ?></p>
                             <div class="d-flex justify-content-between align-items-center gap-3">
