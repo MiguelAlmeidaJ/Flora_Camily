@@ -133,6 +133,47 @@ function verifyCsrf(): void
     }
 }
 
+function appSetting(string $key, string $default = ''): string
+{
+    static $cache = [];
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    try {
+        $stmt = db()->prepare('SELECT setting_value FROM app_settings WHERE setting_key = ? LIMIT 1');
+        $stmt->execute([$key]);
+        $value = $stmt->fetchColumn();
+        $cache[$key] = $value === false || $value === null ? $default : (string) $value;
+    } catch (Throwable $e) {
+        $cache[$key] = $default;
+    }
+
+    return $cache[$key];
+}
+
+function setAppSetting(string $key, string $value): void
+{
+    $stmt = db()->prepare(
+        'INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP'
+    );
+    $stmt->execute([$key, $value]);
+}
+
+function siteLogo(): string
+{
+    $path = appSetting('site_logo', 'assets/img/logo.svg');
+    return is_file(__DIR__ . '/' . ltrim($path, '/')) ? $path : 'assets/img/logo.svg';
+}
+
+function siteFavicon(): string
+{
+    $path = appSetting('site_favicon', 'assets/img/logo.svg');
+    return is_file(__DIR__ . '/' . ltrim($path, '/')) ? $path : 'assets/img/logo.svg';
+}
+
 function cart(): array
 {
     return $_SESSION['cart'] ?? [];
@@ -206,13 +247,17 @@ function crownCategories(bool $onlyActive = true): array
         return $allCache;
     }
 
-    $sql = 'SELECT * FROM categories';
-    if ($onlyActive) {
-        $sql .= ' WHERE active = 1';
+    try {
+        $sql = 'SELECT * FROM categories';
+        if ($onlyActive) {
+            $sql .= ' WHERE active = 1';
+        }
+        $sql .= ' ORDER BY sort_order ASC, name ASC';
+        $rows = db()->query($sql)->fetchAll();
+    } catch (Throwable $e) {
+        $rows = [];
     }
-    $sql .= ' ORDER BY sort_order ASC, name ASC';
 
-    $rows = db()->query($sql)->fetchAll();
     if ($onlyActive) {
         $activeCache = $rows;
     } else {
@@ -284,7 +329,7 @@ function appLog(string $action, array $context = [], string $level = 'info'): vo
             substr((string) ($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45) ?: null,
         ]);
     } catch (Throwable $e) {
-        // O log nunca deve interromper o fluxo principal da loja.
+        // Logging must never interrupt the store flow.
     }
 }
 
@@ -300,7 +345,7 @@ function productImage(?string $image): string
         return $image;
     }
 
-    return 'assets/img/logo.svg';
+    return siteLogo();
 }
 
 function storeWhatsAppUrl(string $message = 'Olá! Gostaria de comprar uma homenagem floral na Flora Camily.'): string
