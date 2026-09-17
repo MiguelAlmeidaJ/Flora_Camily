@@ -2,7 +2,14 @@
 $pageTitle = 'Flora Camily | Homenagens florais com delicadeza';
 require __DIR__ . '/includes/header.php';
 
-$stmt = db()->query('SELECT * FROM products WHERE active = 1 ORDER BY featured DESC, created_at DESC LIMIT 6');
+$stmt = db()->query(
+    'SELECT p.*, c.name AS category_name, c.slug AS category_slug
+     FROM products p
+     LEFT JOIN categories c ON c.id = p.category_id
+     WHERE p.active = 1
+     ORDER BY p.featured DESC, p.created_at DESC
+     LIMIT 6'
+);
 $products = $stmt->fetchAll();
 ?>
 <section class="hero py-5 py-lg-6">
@@ -14,7 +21,7 @@ $products = $stmt->fetchAll();
                 <p class="mb-4">Escolha sua homenagem floral com tranquilidade, informe os dados da entrega e envie o pedido para nossa equipe analisar e preparar tudo com cuidado.</p>
                 <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start">
                     <a href="loja.php" class="btn btn-brand btn-lg px-4">Ver homenagens</a>
-                    <a href="https://wa.me/<?= e(WHATSAPP_NUMBER) ?>" target="_blank" rel="noopener" class="btn btn-outline-brand btn-lg px-4"><i class="bi bi-whatsapp me-2"></i>Falar com a equipe</a>
+                    <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener" class="btn btn-outline-brand btn-lg px-4"><i class="bi bi-whatsapp me-2"></i>Comprar pelo WhatsApp</a>
                 </div>
             </div>
             <div class="col-lg-6">
@@ -65,7 +72,7 @@ $products = $stmt->fetchAll();
                             <img src="<?= e(productImage($product['image'])) ?>" alt="<?= e($product['name']) ?>" class="product-image <?= $fallback ? 'logo-fallback' : '' ?>">
                         </a>
                         <div class="p-4">
-                            <div class="product-category mb-2"><?= e($product['category']) ?></div>
+                            <div class="product-category mb-2"><?= e(productCategoryName($product)) ?></div>
                             <h3 class="product-title mb-2"><a class="text-decoration-none" href="produto.php?id=<?= (int) $product['id'] ?>"><?= e($product['name']) ?></a></h3>
                             <p class="text-secondary small mb-3"><?= e(excerpt((string) $product['description'], 115)) ?></p>
                             <div class="d-flex justify-content-between align-items-center gap-3">
@@ -91,7 +98,7 @@ $products = $stmt->fetchAll();
                 <div class="feature-card">
                     <i class="bi bi-1-circle"></i>
                     <h3 class="h4 mt-3">Escolha a homenagem</h3>
-                    <p class="text-secondary mb-0">Veja os produtos disponíveis e adicione ao carrinho.</p>
+                    <p class="text-secondary mb-0">Veja os produtos disponíveis e adicione ao carrinho ou finalize a compra diretamente.</p>
                 </div>
             </div>
             <div class="col-md-4">
