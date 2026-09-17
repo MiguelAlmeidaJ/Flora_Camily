@@ -21,13 +21,13 @@
             <div class="col-6 col-lg-4">
                 <h6>Atendimento</h6>
                 <a href="https://wa.me/<?= e(WHATSAPP_NUMBER) ?>" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Falar pelo WhatsApp</a>
-                <span class="footer-text small d-block mt-2">Confirme disponibilidade, prazo e local de entrega pelo atendimento.</span>
+                <span class="footer-text small d-block mt-2">A equipe acompanha cada pedido da análise até a entrega.</span>
             </div>
         </div>
         <hr class="my-4">
         <div class="d-flex flex-column flex-md-row justify-content-between gap-2 small footer-text">
             <span>© <?= date('Y') ?> Flora Camily. Todos os direitos reservados.</span>
-            <span>Compra concluída com atendimento humano pelo WhatsApp.</span>
+            <span>Entrega própria e acompanhamento humano em todas as etapas.</span>
         </div>
     </div>
 </footer>
