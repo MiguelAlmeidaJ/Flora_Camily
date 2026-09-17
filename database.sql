@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS flora_camily CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE flora_camily;
+-- Importe este arquivo dentro do banco criado pelo painel da hospedagem.
+-- Não é necessário (nem recomendado em hospedagem compartilhada) executar CREATE DATABASE aqui.
 
 CREATE TABLE IF NOT EXISTS admin_users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
