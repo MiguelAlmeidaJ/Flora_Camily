@@ -49,9 +49,20 @@ function money(float $value): string
     return 'R$ ' . number_format($value, 2, ',', '.');
 }
 
-function asset(string $path): string
+function excerpt(?string $text, int $limit = 115): string
 {
-    return ltrim($path, '/');
+    $text = trim((string) $text);
+    if ($text === '') {
+        return '';
+    }
+
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        return mb_strlen($text, 'UTF-8') > $limit
+            ? rtrim(mb_substr($text, 0, $limit, 'UTF-8')) . '...'
+            : $text;
+    }
+
+    return strlen($text) > $limit ? rtrim(substr($text, 0, $limit)) . '...' : $text;
 }
 
 function csrfToken(): string
@@ -140,5 +151,5 @@ function productImage(?string $image): string
         return $image;
     }
 
-    return 'assets/img/logo.png';
+    return 'assets/img/logo.svg';
 }
