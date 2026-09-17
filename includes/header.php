@@ -20,7 +20,7 @@ $pageTitle = $pageTitle ?? SITE_NAME;
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-2">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-            <img src="assets/img/logo.png" alt="Flora Camily" class="brand-logo">
+            <img src="assets/img/logo.svg" alt="Flora Camily" class="brand-logo">
             <span class="brand-name d-none d-sm-inline">Flora Camily</span>
         </a>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu" aria-controls="mainMenu" aria-expanded="false" aria-label="Abrir menu">
