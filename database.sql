@@ -26,15 +26,28 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE TABLE IF NOT EXISTS orders (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(160) NOT NULL,
-    customer_phone VARCHAR(40) NULL,
+    customer_phone VARCHAR(40) NOT NULL,
+    customer_email VARCHAR(160) NULL,
+    honoree_name VARCHAR(160) NOT NULL,
+    state CHAR(2) NULL,
     city VARCHAR(120) NULL,
     delivery_place VARCHAR(255) NULL,
+    delivery_date DATE NULL,
+    delivery_time TIME NULL,
     desired_datetime VARCHAR(100) NULL,
     ribbon_message VARCHAR(255) NULL,
     notes TEXT NULL,
+    products_total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    shipping_fee DECIMAL(10,2) NULL,
     total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    status VARCHAR(40) NOT NULL DEFAULT 'whatsapp_iniciado',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    status VARCHAR(40) NOT NULL DEFAULT 'novo',
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    email_notified TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_orders_status (status),
+    INDEX idx_orders_is_read (is_read),
+    INDEX idx_orders_created_at (created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS order_items (
