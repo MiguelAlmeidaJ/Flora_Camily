@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+  <title id="title">Flora Camily</title>
+  <desc id="desc">Marca floral em tons de oliva, terracota, rosé e dourado.</desc>
+  <g fill="none" stroke="#b48b56" stroke-width="8">
+    <circle cx="450" cy="450" r="412"/>
+    <circle cx="450" cy="450" r="397" stroke-width="3"/>
+  </g>
+  <g transform="translate(450 245)">
+    <path d="M0 92C-18 28-77-20-126-11c38 33 53 79 46 129 27-6 56-15 80-26Z" fill="#e6b09e"/>
+    <path d="M3 92c26-66 78-112 129-95-35 33-48 74-42 123-30-5-60-14-87-28Z" fill="#d99b86"/>
+    <path d="M0 92c-54-9-105 12-132 55 48 5 84 30 111 70 18-35 25-76 21-125Z" fill="#efc0af"/>
+    <path d="M4 92c54-7 106 14 132 58-49 4-85 28-113 68-17-36-24-77-19-126Z" fill="#e7ad99"/>
+    <path d="M0 91c-5-61 15-119 55-150 10 48 3 91-23 130-11 8-21 15-32 20Z" fill="#f0c7b8"/>
+    <path d="M0 90c-4-56-18-104-55-140-5 47 7 89 34 127 8 5 14 9 21 13Z" fill="#dca18d"/>
+    <path d="M0 90V235" stroke="#46502f" stroke-width="12" stroke-linecap="round"/>
+    <path d="M-7 143c-48-29-86-34-119-13 41 14 72 39 94 74 14-17 22-37 25-61Z" fill="#56613b"/>
+    <path d="M9 159c45-31 85-38 119-20-40 18-69 45-88 81-16-15-27-35-31-61Z" fill="#606b43"/>
+    <g fill="#8f543a">
+      <ellipse cx="-38" cy="45" rx="8" ry="22" transform="rotate(-17 -38 45)"/>
+      <ellipse cx="-4" cy="34" rx="8" ry="22"/>
+      <ellipse cx="31" cy="48" rx="8" ry="22" transform="rotate(17 31 48)"/>
+    </g>
+  </g>
+  <text x="450" y="548" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="190" font-weight="600" fill="#43492c">Flora</text>
+  <text x="450" y="680" text-anchor="middle" font-family="'Brush Script MT','Segoe Script',cursive" font-size="150" font-style="italic" fill="#b97856">Camily</text>
+  <g fill="#43492c" font-family="Arial, sans-serif" text-anchor="middle">
+    <text x="450" y="753" font-size="27" letter-spacing="8">FLORES QUE FAZEM</text>
+    <text x="450" y="790" font-size="27" letter-spacing="9">HISTÓRIAS</text>
+  </g>
+  <g stroke="#43492c" stroke-width="3">
+    <line x1="210" y1="746" x2="325" y2="746"/>
+    <line x1="575" y1="746" x2="690" y2="746"/>
+  </g>
+  <path d="M450 825c-18-31-45-30-45-8 0 19 24 34 45 46 21-12 45-27 45-46 0-22-27-23-45 8Z" fill="#b97856"/>
+</svg>
