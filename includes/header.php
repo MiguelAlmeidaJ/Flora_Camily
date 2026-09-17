@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
 $pageTitle = $pageTitle ?? SITE_NAME;
+$headerCategories = crownCategories();
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -29,14 +30,20 @@ $pageTitle = $pageTitle ?? SITE_NAME;
         <div class="collapse navbar-collapse" id="mainMenu">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <li class="nav-item"><a class="nav-link" href="index.php">Início</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="loja.php" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coroas</a>
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-4 p-2">
+                        <li><a class="dropdown-item rounded-3" href="loja.php"><i class="bi bi-grid me-2"></i>Ver todas</a></li>
+                        <?php foreach ($headerCategories as $category): ?>
+                            <li><a class="dropdown-item rounded-3" href="loja.php?categoria=<?= urlencode((string) $category['slug']) ?>"><i class="bi bi-flower1 me-2"></i><?= e($category['name']) ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </li>
                 <li class="nav-item"><a class="nav-link" href="loja.php">Homenagens</a></li>
                 <li class="nav-item"><a class="nav-link" href="index.php#como-funciona">Como funciona</a></li>
                 <li class="nav-item ms-lg-2">
-                    <a class="btn btn-brand position-relative" href="carrinho.php">
-                        <i class="bi bi-bag-heart me-1"></i> Carrinho
-                        <?php if (cartCount() > 0): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge"><?= cartCount() ?></span>
-                        <?php endif; ?>
+                    <a class="btn btn-brand" href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener">
+                        <i class="bi bi-whatsapp me-1"></i> Comprar pelo WhatsApp
                     </a>
                 </li>
             </ul>
