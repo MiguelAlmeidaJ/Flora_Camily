@@ -10,6 +10,7 @@ $headerCategories = crownCategories();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Homenagens florais feitas com cuidado, respeito e delicadeza.">
     <title><?= e($pageTitle) ?></title>
+    <link rel="icon" href="<?= e(siteFavicon()) ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -21,7 +22,7 @@ $headerCategories = crownCategories();
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-2">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
-            <img src="assets/img/logo.svg" alt="Flora Camily" class="brand-logo">
+            <img src="<?= e(siteLogo()) ?>" alt="Flora Camily" class="brand-logo">
             <span class="brand-name d-none d-sm-inline">Flora Camily</span>
         </a>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu" aria-controls="mainMenu" aria-expanded="false" aria-label="Abrir menu">
