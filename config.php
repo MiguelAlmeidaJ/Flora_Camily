@@ -8,12 +8,31 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 const SITE_NAME = 'Flora Camily';
 const SITE_TAGLINE = 'Flores que fazem histórias';
-const WHATSAPP_NUMBER = '5532999999999'; // Altere para o WhatsApp real, somente números.
 
-const DB_HOST = 'localhost';
-const DB_NAME = 'flora_camily';
-const DB_USER = 'root';
-const DB_PASS = '';
+$settings = [
+    'whatsapp_number' => '5532999999999',
+    'db' => [
+        'host' => 'localhost',
+        'name' => 'flora_camily',
+        'user' => 'root',
+        'pass' => '',
+    ],
+];
+
+$localConfigFile = __DIR__ . '/config.local.php';
+if (is_file($localConfigFile)) {
+    $localSettings = require $localConfigFile;
+    if (is_array($localSettings)) {
+        $settings = array_replace_recursive($settings, $localSettings);
+    }
+}
+
+define('WHATSAPP_NUMBER', (string) preg_replace('/\D+/', '', (string) $settings['whatsapp_number']));
+define('DB_HOST', (string) $settings['db']['host']);
+define('DB_NAME', (string) $settings['db']['name']);
+define('DB_USER', (string) $settings['db']['user']);
+define('DB_PASS', (string) $settings['db']['pass']);
+unset($settings, $localSettings, $localConfigFile);
 
 function db(): PDO
 {
@@ -33,7 +52,7 @@ function db(): PDO
         ]);
     } catch (PDOException $e) {
         http_response_code(500);
-        exit('Não foi possível conectar ao banco de dados. Verifique o arquivo config.php.');
+        exit('Não foi possível conectar ao banco de dados. Verifique o arquivo config.local.php.');
     }
 
     return $pdo;
