@@ -5,8 +5,9 @@ $loginError = '';
 $flash = $_SESSION['admin_flash'] ?? '';
 unset($_SESSION['admin_flash']);
 
-if (isset($_GET['logout'])) {
-    unset($_SESSION['admin_id'], $_SESSION['admin_username']);
+if (isset($_GET['logout']) && adminLoggedIn()) {
+    appLog('auth.logout');
+    unset($_SESSION['admin_id'], $_SESSION['admin_username'], $_SESSION['admin_role']);
     redirect('admin.php');
 }
 
@@ -23,6 +24,8 @@ if (!adminLoggedIn() && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action
         session_regenerate_id(true);
         $_SESSION['admin_id'] = (int) $user['id'];
         $_SESSION['admin_username'] = $user['username'];
+        $_SESSION['admin_role'] = (string) ($user['role'] ?? 'admin');
+        appLog('auth.login', ['role' => $_SESSION['admin_role']]);
         redirect('admin.php');
     }
 
@@ -142,8 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $total = (float) $productsTotal + ($shippingFee ?? 0.0);
-            $update = db()->prepare('UPDATE orders SET status = ?, shipping_fee = ?, total = ?, is_read = 1 WHERE id = ?');
-            $update->execute([$status, $shippingFee, $total, $orderId]);
+            db()->prepare('UPDATE orders SET status = ?, shipping_fee = ?, total = ?, is_read = 1 WHERE id = ?')
+                ->execute([$status, $shippingFee, $total, $orderId]);
+            appLog('order.update', ['order_id' => $orderId, 'status' => $status, 'shipping_fee' => $shippingFee]);
 
             $_SESSION['admin_flash'] = $status === 'em_preparacao'
                 ? 'Venda fechada. Pedido movido para Em preparação.'
@@ -154,14 +158,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'save_product') {
             $id = (int) ($_POST['id'] ?? 0);
             $name = trim((string) ($_POST['name'] ?? ''));
-            $category = trim((string) ($_POST['category'] ?? '')) ?: 'Homenagens florais';
             $description = trim((string) ($_POST['description'] ?? ''));
             $price = (float) str_replace(',', '.', (string) ($_POST['price'] ?? '0'));
+            $categoryId = (int) ($_POST['category_id'] ?? 0);
             $active = isset($_POST['active']) ? 1 : 0;
             $featured = isset($_POST['featured']) ? 1 : 0;
 
             if ($name === '' || $price < 0) {
                 throw new RuntimeException('Preencha nome e preço corretamente.');
+            }
+
+            $categoryName = 'Homenagens florais';
+            $categoryDbValue = null;
+            if ($categoryId > 0) {
+                $stmt = db()->prepare('SELECT id, name FROM categories WHERE id = ? LIMIT 1');
+                $stmt->execute([$categoryId]);
+                $category = $stmt->fetch();
+                if (!$category) {
+                    throw new RuntimeException('Categoria inválida.');
+                }
+                $categoryDbValue = (int) $category['id'];
+                $categoryName = (string) $category['name'];
+            } elseif ($id > 0) {
+                $stmt = db()->prepare('SELECT category FROM products WHERE id = ?');
+                $stmt->execute([$id]);
+                $existingCategory = trim((string) $stmt->fetchColumn());
+                if ($existingCategory !== '') {
+                    $categoryName = $existingCategory;
+                }
             }
 
             $currentImage = null;
@@ -173,12 +197,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $image = adminUploadImage($currentImage);
 
             if ($id > 0) {
-                $stmt = db()->prepare('UPDATE products SET name = ?, category = ?, description = ?, price = ?, image = ?, active = ?, featured = ? WHERE id = ?');
-                $stmt->execute([$name, $category, $description, $price, $image, $active, $featured, $id]);
+                $stmt = db()->prepare('UPDATE products SET name = ?, category = ?, category_id = ?, description = ?, price = ?, image = ?, active = ?, featured = ? WHERE id = ?');
+                $stmt->execute([$name, $categoryName, $categoryDbValue, $description, $price, $image, $active, $featured, $id]);
+                appLog('product.update', ['product_id' => $id, 'name' => $name, 'category_id' => $categoryDbValue]);
                 $_SESSION['admin_flash'] = 'Produto atualizado com sucesso.';
             } else {
-                $stmt = db()->prepare('INSERT INTO products (name, category, description, price, image, active, featured) VALUES (?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$name, $category, $description, $price, $image, $active, $featured]);
+                $stmt = db()->prepare('INSERT INTO products (name, category, category_id, description, price, image, active, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$name, $categoryName, $categoryDbValue, $description, $price, $image, $active, $featured]);
+                $id = (int) db()->lastInsertId();
+                appLog('product.create', ['product_id' => $id, 'name' => $name, 'category_id' => $categoryDbValue]);
                 $_SESSION['admin_flash'] = 'Produto criado com sucesso.';
             }
             redirect('admin.php#produtos');
@@ -186,12 +213,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'delete_product') {
             $id = (int) ($_POST['id'] ?? 0);
-            $stmt = db()->prepare('SELECT image FROM products WHERE id = ?');
+            $stmt = db()->prepare('SELECT name, image FROM products WHERE id = ?');
             $stmt->execute([$id]);
-            $image = $stmt->fetchColumn();
-            db()->prepare('DELETE FROM products WHERE id = ?')->execute([$id]);
-            if ($image && str_starts_with((string) $image, 'uploads/') && is_file(__DIR__ . '/' . $image)) {
-                @unlink(__DIR__ . '/' . $image);
+            $product = $stmt->fetch();
+            if ($product) {
+                db()->prepare('DELETE FROM products WHERE id = ?')->execute([$id]);
+                if (!empty($product['image']) && str_starts_with((string) $product['image'], 'uploads/') && is_file(__DIR__ . '/' . $product['image'])) {
+                    @unlink(__DIR__ . '/' . $product['image']);
+                }
+                appLog('product.delete', ['product_id' => $id, 'name' => $product['name']]);
             }
             $_SESSION['admin_flash'] = 'Produto excluído.';
             redirect('admin.php#produtos');
@@ -211,14 +241,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new RuntimeException('A senha atual está incorreta.');
             }
 
-            db()->prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), (int) $_SESSION['admin_id']]);
+            db()->prepare('UPDATE admin_users SET password_hash = ? WHERE id = ?')
+                ->execute([password_hash($new, PASSWORD_DEFAULT), (int) $_SESSION['admin_id']]);
+            appLog('user.password_change');
             $_SESSION['admin_flash'] = 'Senha alterada com sucesso.';
             redirect('admin.php#seguranca');
         }
     } catch (Throwable $e) {
+        appLog('admin.error', ['action' => $action, 'message' => $e->getMessage()], 'error');
         $flash = $e->getMessage();
     }
 }
+
+$categories = crownCategories(false);
 
 $editProduct = null;
 if (!empty($_GET['edit'])) {
@@ -244,7 +279,9 @@ if (!empty($_GET['order'])) {
     }
 }
 
-$products = db()->query('SELECT * FROM products ORDER BY created_at DESC')->fetchAll();
+$products = db()->query(
+    'SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id ORDER BY p.created_at DESC'
+)->fetchAll();
 $orders = db()->query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 50')->fetchAll();
 $unreadOrders = (int) db()->query("SELECT COUNT(*) FROM orders WHERE is_read = 0 AND status = 'novo'")->fetchColumn();
 $statusCounts = array_fill_keys(array_keys(orderStatusOptions()), 0);
@@ -271,13 +308,14 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
             <img src="assets/img/logo.svg" class="brand-logo" alt="Flora Camily">
             <span class="brand-name">Flora Camily</span>
         </a>
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+            <span class="badge rounded-pill <?= isDev() ? 'text-bg-dark' : 'text-bg-secondary' ?>"><?= isDev() ? 'DEV' : 'ADMIN' ?></span>
             <a href="admin.php#pedidos" class="btn btn-light border rounded-pill position-relative" title="Novos pedidos">
                 <i class="bi bi-bell"></i>
-                <?php if ($unreadOrders > 0): ?>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger"><?= $unreadOrders ?></span>
-                <?php endif; ?>
+                <?php if ($unreadOrders > 0): ?><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger"><?= $unreadOrders ?></span><?php endif; ?>
             </a>
+            <a href="admin-categorias.php" class="btn btn-light border rounded-pill"><i class="bi bi-tags"></i><span class="d-none d-md-inline ms-1">Categorias</span></a>
+            <?php if (isDev()): ?><a href="admin-dev.php" class="btn btn-dark rounded-pill"><i class="bi bi-terminal"></i><span class="d-none d-md-inline ms-1">Dev</span></a><?php endif; ?>
             <a href="index.php" target="_blank" class="btn btn-light border rounded-pill"><i class="bi bi-box-arrow-up-right"></i><span class="d-none d-sm-inline ms-1">Ver site</span></a>
             <a href="admin.php?logout=1" class="btn btn-outline-danger rounded-pill"><i class="bi bi-box-arrow-right"></i><span class="d-none d-sm-inline ms-1">Sair</span></a>
         </div>
@@ -293,37 +331,18 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
             <h1 class="h2 mb-1">Gestão de pedidos</h1>
             <p class="text-secondary mb-0">Acompanhe cada venda da análise até a entrega.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
             <a href="#pedidos" class="btn btn-brand"><i class="bi bi-receipt me-1"></i>Pedidos</a>
             <a href="#produtos" class="btn btn-light border rounded-pill"><i class="bi bi-flower1 me-1"></i>Produtos</a>
+            <a href="admin-categorias.php" class="btn btn-light border rounded-pill"><i class="bi bi-tags me-1"></i>Categorias</a>
         </div>
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-xl-3">
-            <div class="admin-stat-card">
-                <span class="admin-stat-icon bg-danger-subtle text-danger"><i class="bi bi-bell"></i></span>
-                <div><small>Novos</small><strong><?= $statusCounts['novo'] ?></strong></div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="admin-stat-card">
-                <span class="admin-stat-icon bg-primary-subtle text-primary"><i class="bi bi-flower2"></i></span>
-                <div><small>Em preparação</small><strong><?= $statusCounts['em_preparacao'] ?></strong></div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="admin-stat-card">
-                <span class="admin-stat-icon bg-info-subtle text-info"><i class="bi bi-truck"></i></span>
-                <div><small>Em entrega</small><strong><?= $statusCounts['em_entrega'] ?></strong></div>
-            </div>
-        </div>
-        <div class="col-6 col-xl-3">
-            <div class="admin-stat-card">
-                <span class="admin-stat-icon bg-success-subtle text-success"><i class="bi bi-check-circle"></i></span>
-                <div><small>Entregues</small><strong><?= $statusCounts['entregue'] ?></strong></div>
-            </div>
-        </div>
+        <div class="col-6 col-xl-3"><div class="admin-stat-card"><span class="admin-stat-icon bg-danger-subtle text-danger"><i class="bi bi-bell"></i></span><div><small>Novos</small><strong><?= $statusCounts['novo'] ?></strong></div></div></div>
+        <div class="col-6 col-xl-3"><div class="admin-stat-card"><span class="admin-stat-icon bg-primary-subtle text-primary"><i class="bi bi-flower2"></i></span><div><small>Em preparação</small><strong><?= $statusCounts['em_preparacao'] ?></strong></div></div></div>
+        <div class="col-6 col-xl-3"><div class="admin-stat-card"><span class="admin-stat-icon bg-info-subtle text-info"><i class="bi bi-truck"></i></span><div><small>Em entrega</small><strong><?= $statusCounts['em_entrega'] ?></strong></div></div></div>
+        <div class="col-6 col-xl-3"><div class="admin-stat-card"><span class="admin-stat-icon bg-success-subtle text-success"><i class="bi bi-check-circle"></i></span><div><small>Entregues</small><strong><?= $statusCounts['entregue'] ?></strong></div></div></div>
     </div>
 
     <section id="pedidos" class="mb-5 scroll-margin-top">
@@ -331,13 +350,9 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
             <div class="<?= $selectedOrder ? 'col-xl-7' : 'col-12' ?>">
                 <div class="admin-card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h2 class="h3 mb-1">Pedidos</h2>
-                            <div class="small text-secondary">Os pedidos mais recentes aparecem primeiro.</div>
-                        </div>
+                        <div><h2 class="h3 mb-1">Pedidos</h2><div class="small text-secondary">Os pedidos mais recentes aparecem primeiro.</div></div>
                         <?php if ($unreadOrders > 0): ?><span class="badge text-bg-danger rounded-pill"><?= $unreadOrders ?> novo<?= $unreadOrders === 1 ? '' : 's' ?></span><?php endif; ?>
                     </div>
-
                     <div class="table-responsive">
                         <table class="table align-middle admin-orders-table mb-0">
                             <thead><tr><th>Pedido</th><th>Cliente</th><th>Entrega</th><th>Status</th><th>Total</th><th></th></tr></thead>
@@ -345,18 +360,9 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
                             <?php if (!$orders): ?><tr><td colspan="6" class="text-secondary py-5 text-center">Nenhum pedido registrado.</td></tr><?php endif; ?>
                             <?php foreach ($orders as $order): ?>
                                 <tr class="<?= !(int) $order['is_read'] && $order['status'] === 'novo' ? 'order-unread' : '' ?>">
-                                    <td>
-                                        <strong>#<?= (int) $order['id'] ?></strong>
-                                        <div class="small text-secondary"><?= date('d/m H:i', strtotime($order['created_at'])) ?></div>
-                                    </td>
-                                    <td>
-                                        <strong><?= e($order['customer_name']) ?></strong>
-                                        <div class="small text-secondary"><?= e($order['customer_phone']) ?></div>
-                                    </td>
-                                    <td>
-                                        <div><?= e($order['city']) ?>/<?= e($order['state']) ?></div>
-                                        <div class="small text-secondary"><?= $order['delivery_date'] ? date('d/m/Y', strtotime($order['delivery_date'])) : 'Data não informada' ?><?= $order['delivery_time'] ? ' · ' . substr((string) $order['delivery_time'], 0, 5) : '' ?></div>
-                                    </td>
+                                    <td><strong>#<?= (int) $order['id'] ?></strong><div class="small text-secondary"><?= date('d/m H:i', strtotime($order['created_at'])) ?></div></td>
+                                    <td><strong><?= e($order['customer_name']) ?></strong><div class="small text-secondary"><?= e($order['customer_phone']) ?></div></td>
+                                    <td><div><?= e($order['city']) ?>/<?= e($order['state']) ?></div><div class="small text-secondary"><?= $order['delivery_date'] ? date('d/m/Y', strtotime($order['delivery_date'])) : 'Data não informada' ?><?= $order['delivery_time'] ? ' · ' . substr((string) $order['delivery_time'], 0, 5) : '' ?></div></td>
                                     <td><span class="badge <?= e(orderStatusClass((string) $order['status'])) ?>"><?= e(orderStatusLabel((string) $order['status'])) ?></span></td>
                                     <td class="text-nowrap fw-semibold"><?= money((float) $order['total']) ?></td>
                                     <td class="text-end"><a href="admin.php?order=<?= (int) $order['id'] ?>#pedido-<?= (int) $order['id'] ?>" class="btn btn-sm btn-light border">Ver</a></td>
@@ -372,25 +378,15 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
                 <div class="col-xl-5" id="pedido-<?= (int) $selectedOrder['id'] ?>">
                     <div class="admin-card order-detail-card sticky-xl-top" style="top:95px">
                         <div class="p-4 border-bottom d-flex justify-content-between align-items-start gap-3">
-                            <div>
-                                <span class="small text-secondary">Pedido</span>
-                                <h2 class="h3 mb-1">#<?= (int) $selectedOrder['id'] ?></h2>
-                                <span class="badge <?= e(orderStatusClass((string) $selectedOrder['status'])) ?>"><?= e(orderStatusLabel((string) $selectedOrder['status'])) ?></span>
-                            </div>
+                            <div><span class="small text-secondary">Pedido</span><h2 class="h3 mb-1">#<?= (int) $selectedOrder['id'] ?></h2><span class="badge <?= e(orderStatusClass((string) $selectedOrder['status'])) ?>"><?= e(orderStatusLabel((string) $selectedOrder['status'])) ?></span></div>
                             <a href="admin.php#pedidos" class="btn btn-sm btn-light border"><i class="bi bi-x-lg"></i></a>
                         </div>
-
                         <div class="p-4 border-bottom">
                             <h3 class="h6 text-uppercase text-secondary">Cliente</h3>
                             <div class="fw-bold"><?= e($selectedOrder['customer_name']) ?></div>
                             <div class="small text-secondary mb-3"><?= e($selectedOrder['customer_email']) ?></div>
-                            <?php if ($selectedOrder['customer_phone']): ?>
-                                <a href="<?= e(customerWhatsAppUrl((string) $selectedOrder['customer_phone'], (int) $selectedOrder['id'])) ?>" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill">
-                                    <i class="bi bi-whatsapp me-1"></i>Chamar cliente
-                                </a>
-                            <?php endif; ?>
+                            <?php if ($selectedOrder['customer_phone']): ?><a href="<?= e(customerWhatsAppUrl((string) $selectedOrder['customer_phone'], (int) $selectedOrder['id'])) ?>" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill"><i class="bi bi-whatsapp me-1"></i>Chamar cliente</a><?php endif; ?>
                         </div>
-
                         <div class="p-4 border-bottom">
                             <h3 class="h6 text-uppercase text-secondary">Dados do velório</h3>
                             <dl class="row small mb-0 order-dl">
@@ -399,53 +395,22 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
                                 <dt class="col-5">Local</dt><dd class="col-7"><?= e($selectedOrder['delivery_place']) ?></dd>
                                 <dt class="col-5">Entrega</dt><dd class="col-7"><?= $selectedOrder['delivery_date'] ? date('d/m/Y', strtotime($selectedOrder['delivery_date'])) : '—' ?><?= $selectedOrder['delivery_time'] ? ' às ' . substr((string) $selectedOrder['delivery_time'], 0, 5) : '' ?></dd>
                             </dl>
-                            <?php if ($selectedOrder['ribbon_message']): ?>
-                                <div class="mt-3 p-3 bg-light rounded-3 small"><strong>Faixa:</strong><br><?= nl2br(e($selectedOrder['ribbon_message'])) ?></div>
-                            <?php endif; ?>
-                            <?php if ($selectedOrder['notes']): ?>
-                                <div class="mt-2 small"><strong>Observações:</strong><br><?= nl2br(e($selectedOrder['notes'])) ?></div>
-                            <?php endif; ?>
+                            <?php if ($selectedOrder['ribbon_message']): ?><div class="mt-3 p-3 bg-light rounded-3 small"><strong>Faixa:</strong><br><?= nl2br(e($selectedOrder['ribbon_message'])) ?></div><?php endif; ?>
+                            <?php if ($selectedOrder['notes']): ?><div class="mt-2 small"><strong>Observações:</strong><br><?= nl2br(e($selectedOrder['notes'])) ?></div><?php endif; ?>
                         </div>
-
                         <div class="p-4 border-bottom">
                             <h3 class="h6 text-uppercase text-secondary">Itens</h3>
-                            <div class="vstack gap-2">
-                                <?php foreach ($selectedOrderItems as $item): ?>
-                                    <div class="d-flex justify-content-between gap-3 small">
-                                        <span><?= (int) $item['quantity'] ?>x <?= e($item['product_name']) ?></span>
-                                        <strong><?= money((float) $item['subtotal']) ?></strong>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                            <div class="vstack gap-2"><?php foreach ($selectedOrderItems as $item): ?><div class="d-flex justify-content-between gap-3 small"><span><?= (int) $item['quantity'] ?>x <?= e($item['product_name']) ?></span><strong><?= money((float) $item['subtotal']) ?></strong></div><?php endforeach; ?></div>
                             <hr>
                             <div class="d-flex justify-content-between small mb-2"><span>Produtos</span><strong><?= money((float) $selectedOrder['products_total']) ?></strong></div>
                             <div class="d-flex justify-content-between small mb-2"><span>Frete</span><strong><?= $selectedOrder['shipping_fee'] === null ? 'A confirmar' : money((float) $selectedOrder['shipping_fee']) ?></strong></div>
                             <div class="d-flex justify-content-between fs-5"><strong>Total</strong><strong><?= money((float) $selectedOrder['total']) ?></strong></div>
                         </div>
-
                         <form method="post" class="p-4">
                             <?= csrfField() ?>
-                            <input type="hidden" name="action" value="update_order">
-                            <input type="hidden" name="order_id" value="<?= (int) $selectedOrder['id'] ?>">
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Frete</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">R$</span>
-                                    <input type="number" name="shipping_fee" class="form-control" min="0" step="0.01" placeholder="A confirmar" value="<?= $selectedOrder['shipping_fee'] !== null ? e(number_format((float) $selectedOrder['shipping_fee'], 2, '.', '')) : '' ?>">
-                                </div>
-                                <div class="form-text">Deixe vazio enquanto o valor ainda não estiver definido.</div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Status do pedido</label>
-                                <select name="status" class="form-select">
-                                    <?php foreach (orderStatusOptions() as $value => $label): ?>
-                                        <option value="<?= e($value) ?>" <?= $selectedOrder['status'] === $value ? 'selected' : '' ?>><?= e($label) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-
+                            <input type="hidden" name="action" value="update_order"><input type="hidden" name="order_id" value="<?= (int) $selectedOrder['id'] ?>">
+                            <div class="mb-3"><label class="form-label fw-semibold">Frete</label><div class="input-group"><span class="input-group-text">R$</span><input type="number" name="shipping_fee" class="form-control" min="0" step="0.01" placeholder="A confirmar" value="<?= $selectedOrder['shipping_fee'] !== null ? e(number_format((float) $selectedOrder['shipping_fee'], 2, '.', '')) : '' ?>"></div><div class="form-text">Deixe vazio enquanto o valor ainda não estiver definido.</div></div>
+                            <div class="mb-3"><label class="form-label fw-semibold">Status do pedido</label><select name="status" class="form-select"><?php foreach (orderStatusOptions() as $value => $label): ?><option value="<?= e($value) ?>" <?= $selectedOrder['status'] === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
                             <button class="btn btn-brand w-100 rounded-3" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Atualizar pedido</button>
                             <div class="small text-secondary mt-3">Ao fechar a venda, altere para <strong>Em preparação</strong>. Depois use <strong>Em entrega</strong> e, por fim, <strong>Entregue</strong>.</div>
                         </form>
@@ -462,10 +427,16 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
                     <h2 class="h3 mb-4"><?= $editProduct ? 'Editar produto' : 'Novo produto' ?></h2>
                     <form method="post" enctype="multipart/form-data">
                         <?= csrfField() ?>
-                        <input type="hidden" name="action" value="save_product">
-                        <input type="hidden" name="id" value="<?= (int) ($editProduct['id'] ?? 0) ?>">
+                        <input type="hidden" name="action" value="save_product"><input type="hidden" name="id" value="<?= (int) ($editProduct['id'] ?? 0) ?>">
                         <div class="mb-3"><label class="form-label fw-semibold">Nome</label><input type="text" name="name" class="form-control" required maxlength="160" value="<?= e($editProduct['name'] ?? '') ?>"></div>
-                        <div class="mb-3"><label class="form-label fw-semibold">Categoria</label><input type="text" name="category" class="form-control" maxlength="100" value="<?= e($editProduct['category'] ?? 'Homenagens florais') ?>"></div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Categoria de coroa</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">Sem categoria de coroas</option>
+                                <?php foreach ($categories as $category): ?><option value="<?= (int) $category['id'] ?>" <?= (int) ($editProduct['category_id'] ?? 0) === (int) $category['id'] ? 'selected' : '' ?>><?= e($category['name']) ?><?= (int) $category['active'] ? '' : ' (oculta)' ?></option><?php endforeach; ?>
+                            </select>
+                            <div class="form-text"><a href="admin-categorias.php">Administrar categorias</a></div>
+                        </div>
                         <div class="mb-3"><label class="form-label fw-semibold">Descrição</label><textarea name="description" class="form-control" rows="4"><?= e($editProduct['description'] ?? '') ?></textarea></div>
                         <div class="mb-3"><label class="form-label fw-semibold">Preço</label><input type="number" name="price" class="form-control" min="0" step="0.01" required value="<?= e(isset($editProduct['price']) ? (string) $editProduct['price'] : '') ?>"></div>
                         <div class="mb-3"><label class="form-label fw-semibold">Imagem</label><input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPG, PNG ou WEBP. Máximo 4 MB.</div></div>
@@ -476,32 +447,21 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
                     </form>
                 </div>
             </div>
-
             <div class="col-xl-8">
                 <div class="admin-card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h3 mb-0">Produtos</h2><span class="badge text-bg-light border"><?= count($products) ?> itens</span></div>
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead><tr><th>Produto</th><th>Preço</th><th>Status</th><th class="text-end">Ações</th></tr></thead>
-                            <tbody>
-                            <?php foreach ($products as $product): ?>
-                                <tr>
-                                    <td><strong><?= e($product['name']) ?></strong><div class="small text-secondary"><?= e($product['category']) ?></div></td>
-                                    <td class="text-nowrap"><?= money((float) $product['price']) ?></td>
-                                    <td><span class="badge <?= (int) $product['active'] ? 'text-bg-success' : 'text-bg-secondary' ?>"><?= (int) $product['active'] ? 'Ativo' : 'Oculto' ?></span></td>
-                                    <td class="text-end text-nowrap">
-                                        <a href="admin.php?edit=<?= (int) $product['id'] ?>#produtos" class="btn btn-sm btn-light border"><i class="bi bi-pencil"></i></a>
-                                        <form method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');">
-                                            <?= csrfField() ?>
-                                            <input type="hidden" name="action" value="delete_product">
-                                            <input type="hidden" name="id" value="<?= (int) $product['id'] ?>">
-                                            <button class="btn btn-sm btn-light border text-danger" type="submit"><i class="bi bi-trash"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                        <table class="table align-middle mb-0"><thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Status</th><th class="text-end">Ações</th></tr></thead><tbody>
+                        <?php foreach ($products as $product): ?>
+                            <tr>
+                                <td><strong><?= e($product['name']) ?></strong></td>
+                                <td><span class="small"><?= e(productCategoryName($product)) ?></span></td>
+                                <td class="text-nowrap"><?= money((float) $product['price']) ?></td>
+                                <td><span class="badge <?= (int) $product['active'] ? 'text-bg-success' : 'text-bg-secondary' ?>"><?= (int) $product['active'] ? 'Ativo' : 'Oculto' ?></span></td>
+                                <td class="text-end text-nowrap"><a href="admin.php?edit=<?= (int) $product['id'] ?>#produtos" class="btn btn-sm btn-light border"><i class="bi bi-pencil"></i></a> <form method="post" class="d-inline" onsubmit="return confirm('Excluir este produto?');"><?= csrfField() ?><input type="hidden" name="action" value="delete_product"><input type="hidden" name="id" value="<?= (int) $product['id'] ?>"><button class="btn btn-sm btn-light border text-danger" type="submit"><i class="bi bi-trash"></i></button></form></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody></table>
                     </div>
                 </div>
             </div>
@@ -512,8 +472,7 @@ foreach (db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY stat
         <div class="admin-card p-4">
             <h2 class="h3 mb-3">Segurança</h2>
             <form method="post" class="row g-3">
-                <?= csrfField() ?>
-                <input type="hidden" name="action" value="change_password">
+                <?= csrfField() ?><input type="hidden" name="action" value="change_password">
                 <div class="col-md-5"><label class="form-label fw-semibold">Senha atual</label><input type="password" name="current_password" class="form-control" required></div>
                 <div class="col-md-5"><label class="form-label fw-semibold">Nova senha</label><input type="password" name="new_password" class="form-control" minlength="8" required></div>
                 <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-brand w-100" type="submit">Alterar</button></div>
