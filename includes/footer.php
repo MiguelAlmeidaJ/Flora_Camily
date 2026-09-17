@@ -4,7 +4,7 @@
         <div class="row g-4 align-items-start">
             <div class="col-lg-5">
                 <div class="d-flex align-items-center gap-3 mb-3">
-                    <img src="assets/img/logo.png" alt="Flora Camily" class="footer-logo">
+                    <img src="assets/img/logo.svg" alt="Flora Camily" class="footer-logo">
                     <div>
                         <div class="footer-brand">Flora Camily</div>
                         <small>Flores que fazem histórias</small>
