@@ -149,13 +149,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (isDev() && $action === 'test_email') {
-            if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Configure store_email no config.local.php antes de testar.');
-            if (!function_exists('mail')) throw new RuntimeException('A função mail() não está disponível neste servidor. Configure SMTP para o envio de e-mails.');
-            $headers = ['MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8'];
-            if (FROM_EMAIL !== '' && filter_var(FROM_EMAIL, FILTER_VALIDATE_EMAIL)) $headers[] = 'From: Flora Camily <' . FROM_EMAIL . '>';
-            $sent = @mail(STORE_EMAIL, 'Teste de e-mail - Flora Camily', 'Se você recebeu esta mensagem, o envio de e-mail do servidor está funcionando.', implode("\r\n", $headers));
-            appLog('tools.email_test', ['success' => $sent, 'destination' => STORE_EMAIL], $sent ? 'info' : 'warning');
-            $_SESSION['admin_flash'] = $sent ? 'E-mail de teste enviado.' : 'O servidor não confirmou o envio do e-mail.';
+            if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) {
+                throw new RuntimeException('Configure store_email no config.local.php antes de testar.');
+            }
+            if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+                throw new RuntimeException('PHPMailer não está instalado. Execute composer install no servidor.');
+            }
+            if (!smtpConfigured()) {
+                throw new RuntimeException('SMTP ainda não está configurado corretamente no config.local.php.');
+            }
+
+            $sent = sendAppEmail(
+                STORE_EMAIL,
+                'Teste SMTP - Flora Camily',
+                "Teste de SMTP da Flora Camily.\r\n\r\nSe você recebeu esta mensagem, a configuração está funcionando.",
+                false
+            );
+
+            appLog('tools.email_test', [
+                'success' => $sent,
+                'destination' => STORE_EMAIL,
+                'transport' => 'smtp',
+                'host' => SMTP_HOST,
+                'port' => SMTP_PORT,
+            ], $sent ? 'info' : 'warning');
+
+            $_SESSION['admin_flash'] = $sent
+                ? 'E-mail de teste enviado com sucesso pelo SMTP.'
+                : 'Não foi possível enviar o teste. Consulte os Logs do DEV para ver o erro SMTP.';
             redirect('admin-configuracoes.php#sistema');
         }
     } catch (Throwable $e) {
@@ -220,7 +241,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
     <div class="row g-3">
         <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-database-down"></i></span><div><strong>Backup do banco</strong><small>Baixa um arquivo SQL completo.</small></div><form method="post" class="mt-auto w-100"><?= csrfField() ?><input type="hidden" name="action" value="backup_database"><button class="btn btn-dark btn-sm w-100" type="submit">Gerar backup</button></form></div></div>
         <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-lightning"></i></span><div><strong>Limpar cache</strong><small>Limpa cache local e OPcache quando disponível.</small></div><form method="post" class="mt-auto w-100"><?= csrfField() ?><input type="hidden" name="action" value="clear_cache"><button class="btn btn-light border btn-sm w-100" type="submit">Limpar cache</button></form></div></div>
-        <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-envelope-check"></i></span><div><strong>Testar e-mail</strong><small><?= STORE_EMAIL !== '' ? e(STORE_EMAIL) : 'E-mail não configurado' ?></small></div><form method="post" class="mt-auto w-100"><?= csrfField() ?><input type="hidden" name="action" value="test_email"><button class="btn btn-light border btn-sm w-100" type="submit">Enviar teste</button></form></div></div>
+        <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-envelope-check"></i></span><div><strong>SMTP</strong><small><?php if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)): ?>PHPMailer não instalado<?php elseif (!smtpConfigured()): ?>Configuração pendente<?php else: ?><?= e(SMTP_HOST) ?>:<?= SMTP_PORT ?> · <?= strtoupper(e(SMTP_ENCRYPTION ?: 'sem criptografia')) ?><?php endif; ?></small></div><form method="post" class="mt-auto w-100"><?= csrfField() ?><input type="hidden" name="action" value="test_email"><button class="btn btn-light border btn-sm w-100" type="submit"><i class="bi bi-send me-1"></i>Testar SMTP</button></form></div></div>
         <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-server"></i></span><div><strong>Ambiente</strong><small>PHP <?= e(PHP_VERSION) ?><br><?= e((string) ($_SERVER['SERVER_SOFTWARE'] ?? 'Servidor')) ?></small></div><a href="admin-logs.php" class="btn btn-light border btn-sm w-100 mt-auto">Ver logs</a></div></div>
     </div>
 </div>
