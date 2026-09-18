@@ -1915,3 +1915,368 @@
     font-size: .72rem;
     line-height: 1.45;
 }
+
+
+/* Sidebar - bloco de conta */
+.admin-sidebar-footer {
+    padding-top: 1rem;
+}
+.admin-sidebar-account-card {
+    overflow: hidden;
+    border: 1px solid #e9e5dd;
+    border-radius: 16px;
+    background: rgba(255,255,255,.82);
+    box-shadow: 0 8px 24px rgba(55,61,42,.045);
+}
+.admin-sidebar-account-card .admin-user-pill {
+    padding: .9rem;
+}
+.admin-role-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    border-radius: 50%;
+    background: #65a778;
+    box-shadow: 0 0 0 4px rgba(101,167,120,.10);
+}
+.admin-sidebar-account-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid #ece8e0;
+}
+.admin-account-action {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    color: #5c654b;
+    text-decoration: none;
+    font-size: .7rem;
+    font-weight: 800;
+    background: #fbfaf7;
+    transition: .18s ease;
+}
+.admin-account-action + .admin-account-action {
+    border-left: 1px solid #ece8e0;
+}
+.admin-account-action:hover {
+    color: var(--flora-olive-dark);
+    background: #f1f3eb;
+}
+.admin-account-action.is-danger {
+    color: #b45d63;
+}
+.admin-account-action.is-danger:hover {
+    color: #a53f47;
+    background: #fff5f5;
+}
+
+/* Regiões - visual refinado */
+.regions-page {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 1500px;
+}
+.regions-hero-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 230px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: 2rem;
+    border: 1px solid #e7e4dc;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 85% 20%, rgba(216,161,141,.16), transparent 28%),
+        linear-gradient(135deg, #fff 0%, #fbfaf6 65%, #f7f0e8 100%);
+    box-shadow: 0 12px 34px rgba(55,61,42,.05);
+}
+.regions-hero-copy {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+}
+.regions-hero-kicker,
+.regions-panel-kicker {
+    display: block;
+    color: var(--flora-terracotta);
+    font-size: .65rem;
+    font-weight: 850;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+.regions-hero-copy h2 {
+    margin: .5rem 0 .55rem;
+    color: var(--flora-olive);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    line-height: 1;
+}
+.regions-hero-copy p {
+    max-width: 610px;
+    margin: 0;
+    color: #7b8178;
+    font-size: .82rem;
+    line-height: 1.6;
+}
+.regions-hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin-top: 1.2rem;
+}
+.regions-hero-stats > div {
+    min-width: 106px;
+    padding: .7rem .85rem;
+    border: 1px solid rgba(67,73,44,.08);
+    border-radius: 12px;
+    background: rgba(255,255,255,.75);
+}
+.regions-hero-stats span,
+.regions-hero-stats strong {
+    display: block;
+}
+.regions-hero-stats span {
+    color: #979d94;
+    font-size: .6rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.regions-hero-stats strong {
+    margin-top: .08rem;
+    color: #39412d;
+    font-size: 1rem;
+}
+.regions-hero-actions {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+.regions-hero-map-mark {
+    position: absolute;
+    right: 7%;
+    bottom: -90px;
+    width: 240px;
+    height: 240px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(67,73,44,.07);
+    border-radius: 50%;
+    color: rgba(67,73,44,.055);
+    font-size: 5.5rem;
+}
+.regions-states-panel,
+.regions-cities-panel {
+    padding: 1.4rem;
+}
+.regions-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.15rem;
+}
+.regions-panel-head h3 {
+    margin: .22rem 0 .15rem;
+    color: #303742;
+    font-family: 'Manrope', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+}
+.regions-panel-head p {
+    margin: 0;
+    color: #8a9199;
+    font-size: .7rem;
+}
+.regions-panel-count {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 .55rem;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: #f0f2eb;
+    color: var(--flora-olive);
+    font-size: .78rem;
+    font-weight: 850;
+}
+.regions-state-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: .9rem;
+}
+.regions-state-card-v2 {
+    padding: 1rem;
+    border: 1px solid #e7e9e4;
+    border-radius: 16px;
+    background: #fff;
+}
+.regions-state-card-top,
+.regions-state-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
+}
+.regions-state-uf-v2 {
+    width: 48px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--flora-olive);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+}
+.regions-status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: .38rem;
+    color: #949aa0;
+    font-size: .65rem;
+    font-weight: 800;
+}
+.regions-status-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #aeb3b7;
+}
+.regions-status-dot.is-active {
+    color: #3d8759;
+}
+.regions-status-dot.is-active::before {
+    background: #49a06a;
+    box-shadow: 0 0 0 3px rgba(73,160,106,.10);
+}
+.regions-state-card-body {
+    margin-top: .9rem;
+}
+.regions-state-card-body strong,
+.regions-state-card-body span {
+    display: block;
+}
+.regions-state-card-body strong {
+    color: #2f3741;
+    font-size: .86rem;
+}
+.regions-state-card-body span {
+    margin-top: .2rem;
+    color: #8b9299;
+    font-size: .68rem;
+}
+.regions-state-progress {
+    height: 5px;
+    overflow: hidden;
+    margin: .85rem 0;
+    border-radius: 999px;
+    background: #eef0ed;
+}
+.regions-state-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #788563, #a6b291);
+}
+.regions-state-card-actions {
+    justify-content: flex-end;
+    padding-top: .75rem;
+    border-top: 1px solid #f0f1ef;
+}
+.regions-city-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: .75rem;
+}
+.regions-city-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0,1fr) auto;
+    align-items: center;
+    gap: .8rem;
+    padding: .85rem;
+    border: 1px solid #e9ebe7;
+    border-radius: 14px;
+    background: #fff;
+    transition: .18s ease;
+}
+.regions-city-card:hover {
+    border-color: #d9ded3;
+    box-shadow: 0 8px 22px rgba(55,61,42,.055);
+    transform: translateY(-1px);
+}
+.regions-city-card.is-muted {
+    opacity: .62;
+    background: #fafafa;
+}
+.regions-city-card-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #f5eee8;
+    color: var(--flora-terracotta);
+}
+.regions-city-card-main {
+    min-width: 0;
+}
+.regions-city-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.regions-city-card-title strong {
+    color: #303741;
+    font-size: .8rem;
+}
+.regions-city-location {
+    display: block;
+    margin-top: .18rem;
+    color: #93999f;
+    font-size: .66rem;
+}
+.regions-city-card-actions {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+}
+@media (max-width: 991.98px) {
+    .regions-hero-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .regions-hero-actions {
+        justify-content: flex-start;
+    }
+    .regions-city-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 575.98px) {
+    .regions-hero-card {
+        padding: 1.25rem;
+    }
+    .regions-hero-stats {
+        width: 100%;
+    }
+    .regions-hero-stats > div {
+        flex: 1 1 90px;
+    }
+    .regions-city-card {
+        grid-template-columns: 38px minmax(0,1fr);
+    }
+    .regions-city-card-actions {
+        grid-column: 2;
+        justify-content: flex-end;
+    }
+}
