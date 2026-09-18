@@ -65,17 +65,27 @@ UPDATE categories
 SET parent_id = @coroas_id
 WHERE id <> @coroas_id
   AND parent_id IS NULL
-  AND slug IN (
-      'coroa-de-flores-simples',
-      'coroa-de-flores-mediana',
-      'coroa-de-flores-luxo'
+  AND (
+      LOWER(TRIM(name)) IN (
+          'coroa de flores simples',
+          'coroa de flores mediana',
+          'coroa de flores luxo'
+      )
+      OR slug IN (
+          'coroa-de-flores-simples',
+          'coroa-de-flores-mediana',
+          'coroa-de-flores-luxo',
+          'coroa-simples',
+          'coroa-mediana',
+          'coroa-luxo'
+      )
   );
 
 UPDATE categories
-SET sort_order = CASE slug
-    WHEN 'coroa-de-flores-simples' THEN 10
-    WHEN 'coroa-de-flores-mediana' THEN 20
-    WHEN 'coroa-de-flores-luxo' THEN 30
+SET sort_order = CASE
+    WHEN LOWER(TRIM(name)) = 'coroa de flores simples' OR slug IN ('coroa-de-flores-simples', 'coroa-simples') THEN 10
+    WHEN LOWER(TRIM(name)) = 'coroa de flores mediana' OR slug IN ('coroa-de-flores-mediana', 'coroa-mediana') THEN 20
+    WHEN LOWER(TRIM(name)) = 'coroa de flores luxo' OR slug IN ('coroa-de-flores-luxo', 'coroa-luxo') THEN 30
     ELSE sort_order
 END
 WHERE parent_id = @coroas_id;
