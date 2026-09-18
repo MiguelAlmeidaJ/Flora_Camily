@@ -431,7 +431,7 @@ function smtpConfigured(): bool
         return false;
     }
 
-    $from = FROM_EMAIL !== '' ? FROM_EMAIL : SMTP_USERNAME;
+    $from = SMTP_USERNAME !== '' ? SMTP_USERNAME : FROM_EMAIL;
     return $from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) !== false;
 }
 
@@ -468,8 +468,17 @@ function sendAppEmail(string $to, string $subject, string $body, bool $isHtml = 
             $mail->SMTPAutoTLS = false;
         }
 
-        $fromEmail = FROM_EMAIL !== '' ? FROM_EMAIL : SMTP_USERNAME;
+        $fromEmail = SMTP_USERNAME !== '' ? SMTP_USERNAME : FROM_EMAIL;
         $mail->setFrom($fromEmail, SMTP_FROM_NAME);
+
+        if (
+            FROM_EMAIL !== '' &&
+            filter_var(FROM_EMAIL, FILTER_VALIDATE_EMAIL) &&
+            strcasecmp(FROM_EMAIL, $fromEmail) !== 0
+        ) {
+            $mail->addReplyTo(FROM_EMAIL);
+        }
+
         $mail->addAddress($to);
         $mail->Subject = $subject;
 
@@ -482,7 +491,19 @@ function sendAppEmail(string $to, string $subject, string $body, bool $isHtml = 
             $mail->Body = $body;
         }
 
-        return $mail->send();
+        $sent = $mail->send();
+
+        if ($sent) {
+            appLog('email.smtp_accepted', [
+                'to' => $to,
+                'from' => $fromEmail,
+                'message_id' => $mail->getLastMessageID(),
+                'host' => SMTP_HOST,
+                'port' => SMTP_PORT,
+            ], 'info');
+        }
+
+        return $sent;
     } catch (Throwable $e) {
         appLog('email.smtp_error', [
             'to' => $to,
