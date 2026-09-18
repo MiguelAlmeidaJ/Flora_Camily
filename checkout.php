@@ -154,7 +154,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            $errors[] = 'Não foi possível registrar o pedido. Tente novamente em alguns instantes.';
+
+            $errorReference = 'CHK-' . date('YmdHis') . '-' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+            appLog('checkout.order_error', [
+                'reference' => $errorReference,
+                'message' => $e->getMessage(),
+                'exception' => get_class($e),
+            ], 'error');
+            error_log('[Flora Camily][' . $errorReference . '] Checkout error: ' . $e->getMessage());
+
+            $errors[] = 'Não foi possível registrar o pedido. Informe o código ' . $errorReference . ' para a equipe.';
         }
     }
 }
