@@ -65,7 +65,6 @@ $headerCategoryTree = categoryTree();
                         </li>
                     <?php endif; ?>
                 <?php endforeach; ?>
-                <li class="nav-item"><a class="nav-link" href="loja.php">Homenagens</a></li>
                 <li class="nav-item"><a class="nav-link" href="index.php#como-funciona">Como funciona</a></li>
                 <li class="nav-item ms-lg-2">
                     <a class="btn btn-brand" href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener">
