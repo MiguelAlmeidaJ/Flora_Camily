@@ -384,48 +384,46 @@ require __DIR__ . '/includes/admin-shell-start.php';
         </div>
 
         <div class="col-xl-4">
-            <div class="admin-card p-4 product-publish-card sticky-xl-top">
-                <div class="product-form-section-header compact">
-                    <span class="product-form-section-icon"><i class="bi bi-eye"></i></span>
-                    <div>
-                        <h2 class="h5 mb-1">Publicação</h2>
-                        <p class="small text-secondary mb-0">Controle como o produto aparece no site.</p>
+            <div class="admin-card product-publish-card sticky-xl-top">
+                <div class="product-publish-head">
+                    <div class="product-publish-head-icon"><i class="bi bi-eye"></i></div>
+                    <div class="flex-grow-1">
+                        <span class="product-publish-kicker">Visibilidade</span>
+                        <h2 class="h5 mb-0">Publicação</h2>
                     </div>
+                    <span class="product-publish-state <?= !isset($product['active']) || (int) $product['active'] === 1 ? 'is-active' : '' ?>" id="productPublishState">
+                        <?= !isset($product['active']) || (int) $product['active'] === 1 ? 'Publicado' : 'Oculto' ?>
+                    </span>
                 </div>
 
-                <div class="product-publish-options mt-4">
-                    <label class="product-publish-option" for="productActive">
-                        <div>
+                <div class="product-publish-body">
+                    <div class="product-publish-options">
+                        <label class="product-publish-option" for="productActive">
                             <strong>Produto ativo</strong>
-                            <small>Disponível para navegação e compra no site.</small>
-                        </div>
-                        <span class="form-check form-switch m-0">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                name="active"
-                                id="productActive"
-                                <?= !isset($product['active']) || (int) $product['active'] === 1 ? 'checked' : '' ?>
-                            >
-                        </span>
-                    </label>
+                            <span class="form-check form-switch m-0">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="active"
+                                    id="productActive"
+                                    <?= !isset($product['active']) || (int) $product['active'] === 1 ? 'checked' : '' ?>
+                                >
+                            </span>
+                        </label>
 
-                    <label class="product-publish-option" for="productFeatured">
-                        <div>
+                        <label class="product-publish-option" for="productFeatured">
                             <strong>Destaque na home</strong>
-                            <small>Exibe o item entre as homenagens em destaque.</small>
-                        </div>
-                        <span class="form-check form-switch m-0">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                name="featured"
-                                id="productFeatured"
-                                <?= (int) ($product['featured'] ?? 0) === 1 ? 'checked' : '' ?>
-                            >
-                        </span>
-                    </label>
-                </div>
+                            <span class="form-check form-switch m-0">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    name="featured"
+                                    id="productFeatured"
+                                    <?= (int) ($product['featured'] ?? 0) === 1 ? 'checked' : '' ?>
+                                >
+                            </span>
+                        </label>
+                    </div>
 
                 <?php if ($isEditing): ?>
                     <div class="product-meta-box mt-4">
@@ -449,6 +447,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
                     </button>
                     <a href="admin-produtos.php" class="btn btn-light border">Cancelar</a>
                 </div>
+                </div>
             </div>
         </div>
     </div>
@@ -460,7 +459,21 @@ require __DIR__ . '/includes/admin-shell-start.php';
     const image = document.getElementById('productPreviewImage');
     const placeholder = document.getElementById('productImagePlaceholder');
     const removeCheckbox = document.getElementById('removeProductImage');
+    const activeCheckbox = document.getElementById('productActive');
+    const publishState = document.getElementById('productPublishState');
     let objectUrl = null;
+
+    function updatePublishState() {
+        if (!activeCheckbox || !publishState) return;
+        const active = activeCheckbox.checked;
+        publishState.textContent = active ? 'Publicado' : 'Oculto';
+        publishState.classList.toggle('is-active', active);
+    }
+
+    if (activeCheckbox) {
+        activeCheckbox.addEventListener('change', updatePublishState);
+        updatePublishState();
+    }
 
     if (!input || !image || !placeholder) return;
 
