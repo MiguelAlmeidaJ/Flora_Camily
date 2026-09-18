@@ -1771,3 +1771,147 @@
         object-fit: contain;
     }
 }
+
+
+/* Regiões atendidas */
+.regions-page {
+    max-width: 1450px;
+    margin: 0 auto;
+}
+.regions-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.regions-section-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #eef1e8;
+    color: var(--flora-olive);
+}
+.regions-state-list {
+    display: grid;
+    gap: .8rem;
+    margin-top: 1.25rem;
+}
+.regions-state-card {
+    padding: .95rem;
+    border: 1px solid var(--admin-border);
+    border-radius: 14px;
+    background: #fff;
+}
+.regions-state-main {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+.regions-state-main > .min-w-0 {
+    flex: 1;
+}
+.regions-state-uf {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--flora-olive);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+}
+.regions-state-main strong {
+    color: #2f3742;
+    font-size: .86rem;
+}
+.regions-state-main small {
+    display: block;
+    margin-top: .22rem;
+    color: var(--admin-muted);
+    font-size: .7rem;
+}
+.regions-state-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .35rem;
+    margin-top: .8rem;
+    padding-top: .75rem;
+    border-top: 1px solid #eef0f1;
+}
+.regions-city-table thead th {
+    color: #8b929a;
+    background: #fafbfc;
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+.regions-city-table td {
+    padding-top: .85rem;
+    padding-bottom: .85rem;
+}
+.regions-city-name {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+}
+.regions-city-name > span {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #f4f1ec;
+    color: var(--flora-terracotta);
+}
+.regions-city-name strong {
+    color: #303742;
+    font-size: .82rem;
+}
+.regions-city-state {
+    color: #59616b;
+    font-size: .78rem;
+}
+.regions-city-state small {
+    display: inline-flex;
+    margin-left: .35rem;
+    padding: .18rem .4rem;
+    border-radius: 999px;
+    background: #f1f2f3;
+    color: #7a8189;
+    font-size: .62rem;
+    font-weight: 800;
+}
+.regions-empty {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: 1.5rem;
+    color: #969da5;
+    text-align: center;
+}
+.regions-empty.large {
+    min-height: 300px;
+}
+.regions-empty > i {
+    margin-bottom: .35rem;
+    color: #a88975;
+    font-size: 1.8rem;
+}
+.regions-empty strong {
+    color: #4a515a;
+    font-size: .84rem;
+}
+.regions-empty span {
+    max-width: 310px;
+    font-size: .72rem;
+    line-height: 1.45;
+}
