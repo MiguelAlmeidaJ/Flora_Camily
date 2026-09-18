@@ -1498,3 +1498,39 @@ a { color: inherit; }
 .site-footer small {
     color: #9a8e82;
 }
+
+
+/* Checkout - regiões atendidas */
+.checkout-service-region-note {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .85rem 1rem;
+    border: 1px solid #e7dfd6;
+    border-radius: 12px;
+    background: #fbf8f4;
+}
+.checkout-service-region-note > i {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #eef1e8;
+    color: var(--flora-olive);
+}
+.checkout-service-region-note strong,
+.checkout-service-region-note span {
+    display: block;
+}
+.checkout-service-region-note strong {
+    color: #3e4533;
+    font-size: .78rem;
+}
+.checkout-service-region-note span {
+    margin-top: .12rem;
+    color: #817970;
+    font-size: .7rem;
+    line-height: 1.4;
+}
