@@ -25,22 +25,6 @@ if (!$product) {
     exit;
 }
 
-$relatedProducts = [];
-if (!empty($product['category_id'])) {
-    $relatedStmt = db()->prepare(
-        'SELECT p.*, c.name AS category_name, c.slug AS category_slug
-         FROM products p
-         LEFT JOIN categories c ON c.id = p.category_id
-         WHERE p.active = 1
-           AND p.category_id = ?
-           AND p.id <> ?
-         ORDER BY p.featured DESC, p.created_at DESC
-         LIMIT 3'
-    );
-    $relatedStmt->execute([(int) $product['category_id'], (int) $product['id']]);
-    $relatedProducts = $relatedStmt->fetchAll();
-}
-
 $pageTitle = $product['name'] . ' | Flora Camily';
 require __DIR__ . '/includes/header.php';
 $fallback = empty($product['image']);
@@ -63,22 +47,6 @@ $fallback = empty($product['image']);
                     >
                 </div>
 
-                <div class="product-detail-mini-features">
-                    <div>
-                        <span><i class="bi bi-flower1"></i></span>
-                        <div>
-                            <strong>Homenagem personalizada</strong>
-                            <small>Mensagem da faixa definida no checkout.</small>
-                        </div>
-                    </div>
-                    <div>
-                        <span><i class="bi bi-truck"></i></span>
-                        <div>
-                            <strong>Entrega própria</strong>
-                            <small>Disponível nas regiões atendidas pela loja.</small>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="product-detail-main">
@@ -93,12 +61,6 @@ $fallback = empty($product['image']);
                     <small>A partir de</small>
                     <strong><?= money((float) $product['price']) ?></strong>
                 </div>
-
-                <?php if (trim((string) $product['description']) !== ''): ?>
-                    <p class="product-detail-lead">
-                        <?= nl2br(e((string) $product['description'])) ?>
-                    </p>
-                <?php endif; ?>
 
                 <div class="product-detail-info-grid">
                     <div>
@@ -240,68 +202,6 @@ $fallback = empty($product['image']);
             </a>
         </section>
 
-        <?php if ($relatedProducts): ?>
-            <section class="product-related-section">
-                <div class="product-related-head">
-                    <div>
-                        <span class="eyebrow">
-                            <span class="eyebrow-dot"></span>
-                            Você também pode gostar
-                        </span>
-                        <h2>Outras homenagens</h2>
-                    </div>
-
-                    <a href="loja?categoria=<?= urlencode((string) ($product['category_slug'] ?? '')) ?>">
-                        Ver categoria
-                        <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-
-                <div class="product-related-grid">
-                    <?php foreach ($relatedProducts as $related): ?>
-                        <article class="catalog-product-card">
-                            <a href="produto?id=<?= (int) $related['id'] ?>" class="catalog-product-media">
-                                <img
-                                    src="<?= e(productImage($related['image'])) ?>"
-                                    alt="<?= e($related['name']) ?>"
-                                    class="<?= empty($related['image']) ? 'logo-fallback' : '' ?>"
-                                >
-                                <?php if ((int) $related['featured'] === 1): ?>
-                                    <span class="catalog-product-featured">
-                                        <i class="bi bi-stars"></i>Destaque
-                                    </span>
-                                <?php endif; ?>
-                                <span class="catalog-product-arrow">
-                                    <i class="bi bi-arrow-up-right"></i>
-                                </span>
-                            </a>
-
-                            <div class="catalog-product-content">
-                                <span class="catalog-product-category"><?= e(productCategoryName($related)) ?></span>
-                                <h3>
-                                    <a href="produto?id=<?= (int) $related['id'] ?>">
-                                        <?= e($related['name']) ?>
-                                    </a>
-                                </h3>
-                                <p><?= e(excerpt((string) $related['description'], 90)) ?></p>
-                                <div class="catalog-product-bottom">
-                                    <div class="catalog-product-price">
-                                        <small>A partir de</small>
-                                        <strong><?= money((float) $related['price']) ?></strong>
-                                    </div>
-                                    <a href="produto?id=<?= (int) $related['id'] ?>" class="catalog-product-cta">
-                                        Ver produto
-                                        <i class="bi bi-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-        <?php endif; ?>
-    </div>
-</section>
 
 <script>
 (function () {
