@@ -8,6 +8,11 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 date_default_timezone_set('America/Sao_Paulo');
 
+$composerAutoload = __DIR__ . '/vendor/autoload.php';
+if (is_file($composerAutoload)) {
+    require_once $composerAutoload;
+}
+
 const SITE_NAME = 'Flora Camily';
 const SITE_TAGLINE = 'Flores que fazem histórias';
 
@@ -15,6 +20,16 @@ $settings = [
     'whatsapp_number' => '5532999999999',
     'store_email' => '',
     'from_email' => '',
+    'smtp' => [
+        'enabled' => false,
+        'host' => '',
+        'port' => 587,
+        'encryption' => 'tls',
+        'auth' => true,
+        'username' => '',
+        'password' => '',
+        'from_name' => 'Flora Camily',
+    ],
     'db' => [
         'host' => 'localhost',
         'name' => 'flora_camily',
@@ -34,6 +49,14 @@ if (is_file($localConfigFile)) {
 define('WHATSAPP_NUMBER', (string) preg_replace('/\D+/', '', (string) $settings['whatsapp_number']));
 define('STORE_EMAIL', trim((string) $settings['store_email']));
 define('FROM_EMAIL', trim((string) $settings['from_email']));
+define('SMTP_ENABLED', (bool) ($settings['smtp']['enabled'] ?? false));
+define('SMTP_HOST', trim((string) ($settings['smtp']['host'] ?? '')));
+define('SMTP_PORT', (int) ($settings['smtp']['port'] ?? 587));
+define('SMTP_ENCRYPTION', strtolower(trim((string) ($settings['smtp']['encryption'] ?? 'tls'))));
+define('SMTP_AUTH', (bool) ($settings['smtp']['auth'] ?? true));
+define('SMTP_USERNAME', trim((string) ($settings['smtp']['username'] ?? '')));
+define('SMTP_PASSWORD', (string) ($settings['smtp']['password'] ?? ''));
+define('SMTP_FROM_NAME', trim((string) ($settings['smtp']['from_name'] ?? SITE_NAME)) ?: SITE_NAME);
 define('DB_HOST', (string) $settings['db']['host']);
 define('DB_NAME', (string) $settings['db']['name']);
 define('DB_USER', (string) $settings['db']['user']);
@@ -398,13 +421,81 @@ function customerWhatsAppUrl(string $phone, int $orderId): string
     return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
 }
 
-function sendNewOrderEmail(array $order, array $items): bool
+function smtpConfigured(): bool
+{
+    if (!SMTP_ENABLED || SMTP_HOST === '' || SMTP_PORT <= 0) {
+        return false;
+    }
+
+    if (SMTP_AUTH && (SMTP_USERNAME === '' || SMTP_PASSWORD === '')) {
+        return false;
+    }
+
+    $from = FROM_EMAIL !== '' ? FROM_EMAIL : SMTP_USERNAME;
+    return $from !== '' && filter_var($from, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+function sendAppEmail(string $to, string $subject, string $body, bool $isHtml = false): bool
 {
     if (
-        STORE_EMAIL === '' ||
-        !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL) ||
-        !function_exists('mail')
+        !filter_var($to, FILTER_VALIDATE_EMAIL) ||
+        !smtpConfigured() ||
+        !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)
     ) {
+        return false;
+    }
+
+    try {
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = SMTP_HOST;
+        $mail->Port = SMTP_PORT;
+        $mail->SMTPAuth = SMTP_AUTH;
+        $mail->Timeout = 20;
+        $mail->CharSet = 'UTF-8';
+
+        if (SMTP_AUTH) {
+            $mail->Username = SMTP_USERNAME;
+            $mail->Password = SMTP_PASSWORD;
+        }
+
+        if (SMTP_ENCRYPTION === 'ssl') {
+            $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+        } elseif (SMTP_ENCRYPTION === 'tls') {
+            $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $mail->SMTPSecure = '';
+            $mail->SMTPAutoTLS = false;
+        }
+
+        $fromEmail = FROM_EMAIL !== '' ? FROM_EMAIL : SMTP_USERNAME;
+        $mail->setFrom($fromEmail, SMTP_FROM_NAME);
+        $mail->addAddress($to);
+        $mail->Subject = $subject;
+
+        if ($isHtml) {
+            $mail->isHTML(true);
+            $mail->Body = $body;
+            $mail->AltBody = trim(preg_replace('/\s+/', ' ', strip_tags($body)) ?? '');
+        } else {
+            $mail->isHTML(false);
+            $mail->Body = $body;
+        }
+
+        return $mail->send();
+    } catch (Throwable $e) {
+        appLog('email.smtp_error', [
+            'to' => $to,
+            'subject' => $subject,
+            'message' => $e->getMessage(),
+        ], 'warning');
+        return false;
+    }
+}
+
+function sendNewOrderEmail(array $order, array $items): bool
+{
+    if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
 
@@ -437,23 +528,5 @@ function sendNewOrderEmail(array $order, array $items): bool
     $lines[] = '';
     $lines[] = 'Acesse o painel administrativo para analisar e atualizar o pedido.';
 
-    $headers = [
-        'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-    ];
-
-    if (FROM_EMAIL !== '' && filter_var(FROM_EMAIL, FILTER_VALIDATE_EMAIL)) {
-        $headers[] = 'From: Flora Camily <' . FROM_EMAIL . '>';
-        $headers[] = 'Reply-To: ' . FROM_EMAIL;
-    }
-
-    try {
-        return @mail(STORE_EMAIL, $subject, implode("\r\n", $lines), implode("\r\n", $headers));
-    } catch (Throwable $e) {
-        appLog('email.order_notification_error', [
-            'order_id' => $orderId,
-            'message' => $e->getMessage(),
-        ], 'warning');
-        return false;
-    }
+    return sendAppEmail(STORE_EMAIL, $subject, implode("\r\n", $lines), false);
 }
