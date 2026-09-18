@@ -221,193 +221,198 @@ require __DIR__ . '/includes/admin-shell-start.php';
 <?php endif; ?>
 
 <div class="regions-page">
-    <div class="admin-card p-4 mb-4">
-        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+    <section class="regions-hero-card">
+        <div class="regions-hero-copy">
+            <span class="regions-hero-kicker">Área de atendimento</span>
+            <h2>Onde a Flora Camily atende</h2>
+            <p>Gerencie os estados e cidades disponíveis para entrega. O checkout usa somente as regiões ativas nesta página.</p>
+
+            <div class="regions-hero-stats">
+                <div>
+                    <span>Estados</span>
+                    <strong><?= count($states) ?></strong>
+                </div>
+                <div>
+                    <span>Cidades</span>
+                    <strong><?= count($cities) ?></strong>
+                </div>
+                <div>
+                    <span>Ativas</span>
+                    <strong><?= count(array_filter($cities, static fn (array $city): bool => (int) $city['active'] === 1 && (int) $city['state_active'] === 1)) ?></strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="regions-hero-actions">
+            <button
+                type="button"
+                class="btn btn-light border"
+                data-bs-toggle="modal"
+                data-bs-target="#stateModal"
+                data-state-new
+            >
+                <i class="bi bi-plus-lg me-1"></i>Novo estado
+            </button>
+
+            <button
+                type="button"
+                class="btn btn-brand"
+                data-bs-toggle="modal"
+                data-bs-target="#cityModal"
+                data-city-new
+            >
+                <i class="bi bi-geo-alt me-1"></i>Nova cidade
+            </button>
+        </div>
+
+        <div class="regions-hero-map-mark" aria-hidden="true">
+            <i class="bi bi-geo-alt"></i>
+        </div>
+    </section>
+
+    <section class="admin-card regions-states-panel">
+        <div class="regions-panel-head">
             <div>
-                <span class="eyebrow">Área de atendimento</span>
-                <h2 class="h4 mb-1 mt-2">Regiões atendidas</h2>
-                <p class="small text-secondary mb-0">
-                    Apenas estados e cidades ativos aqui aparecem no checkout.
-                </p>
+                <span class="regions-panel-kicker">Cobertura</span>
+                <h3>Estados atendidos</h3>
+                <p>Desativar um estado oculta todas as cidades vinculadas no checkout.</p>
             </div>
-
-            <div class="d-flex flex-wrap gap-2">
-                <button
-                    type="button"
-                    class="btn btn-light border"
-                    data-bs-toggle="modal"
-                    data-bs-target="#stateModal"
-                    data-state-new
-                >
-                    <i class="bi bi-plus-lg me-1"></i>Novo estado
-                </button>
-
-                <button
-                    type="button"
-                    class="btn btn-brand"
-                    data-bs-toggle="modal"
-                    data-bs-target="#cityModal"
-                    data-city-new
-                >
-                    <i class="bi bi-geo-alt me-1"></i>Nova cidade
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 align-items-start">
-        <div class="col-xl-4">
-            <div class="admin-card p-4">
-                <div class="regions-section-head">
-                    <div>
-                        <h2 class="h5 mb-1">Estados</h2>
-                        <p class="small text-secondary mb-0"><?= count($states) ?> cadastrado<?= count($states) === 1 ? '' : 's' ?></p>
-                    </div>
-                    <span class="regions-section-icon"><i class="bi bi-map"></i></span>
-                </div>
-
-                <?php if (!$states): ?>
-                    <div class="regions-empty">
-                        <i class="bi bi-map"></i>
-                        <strong>Nenhum estado cadastrado</strong>
-                        <span>Cadastre o primeiro estado atendido pela loja.</span>
-                    </div>
-                <?php else: ?>
-                    <div class="regions-state-list">
-                        <?php foreach ($states as $state): ?>
-                            <article class="regions-state-card">
-                                <div class="regions-state-main">
-                                    <span class="regions-state-uf"><?= e($state['uf']) ?></span>
-                                    <div class="min-w-0">
-                                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <strong><?= e($state['name']) ?></strong>
-                                            <span class="badge rounded-pill <?= (int) $state['active'] ? 'text-bg-success' : 'text-bg-secondary' ?>">
-                                                <?= (int) $state['active'] ? 'Ativo' : 'Oculto' ?>
-                                            </span>
-                                        </div>
-                                        <small>
-                                            <?= (int) $state['cities_count'] ?> cidade<?= (int) $state['cities_count'] === 1 ? '' : 's' ?>
-                                            · <?= (int) $state['active_cities_count'] ?> ativa<?= (int) $state['active_cities_count'] === 1 ? '' : 's' ?>
-                                        </small>
-                                    </div>
-                                </div>
-
-                                <div class="regions-state-actions">
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-light border js-edit-state"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#stateModal"
-                                        data-id="<?= (int) $state['id'] ?>"
-                                        data-name="<?= e($state['name']) ?>"
-                                        data-uf="<?= e($state['uf']) ?>"
-                                        data-active="<?= (int) $state['active'] ?>"
-                                        title="Editar estado"
-                                    >
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-
-                                    <form method="post" class="d-inline" onsubmit="return confirm('Excluir este estado?');">
-                                        <?= csrfField() ?>
-                                        <input type="hidden" name="action" value="delete_state">
-                                        <input type="hidden" name="id" value="<?= (int) $state['id'] ?>">
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-light border text-danger"
-                                            <?= (int) $state['cities_count'] > 0 ? 'disabled' : '' ?>
-                                            title="<?= (int) $state['cities_count'] > 0 ? 'Remova as cidades antes de excluir' : 'Excluir estado' ?>"
-                                        >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+            <span class="regions-panel-count"><?= count($states) ?></span>
         </div>
 
-        <div class="col-xl-8">
-            <div class="admin-card p-4">
-                <div class="regions-section-head mb-4">
-                    <div>
-                        <h2 class="h5 mb-1">Cidades atendidas</h2>
-                        <p class="small text-secondary mb-0"><?= count($cities) ?> cadastrada<?= count($cities) === 1 ? '' : 's' ?></p>
-                    </div>
-                    <span class="regions-section-icon"><i class="bi bi-geo-alt"></i></span>
-                </div>
-
-                <?php if (!$cities): ?>
-                    <div class="regions-empty large">
-                        <i class="bi bi-geo-alt"></i>
-                        <strong>Nenhuma cidade cadastrada</strong>
-                        <span>Cadastre as cidades onde a Flora Camily realiza entregas.</span>
-                    </div>
-                <?php else: ?>
-                    <div class="table-responsive">
-                        <table class="table align-middle mb-0 regions-city-table">
-                            <thead>
-                                <tr>
-                                    <th>Cidade</th>
-                                    <th>Estado</th>
-                                    <th>Status</th>
-                                    <th class="text-end">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($cities as $city): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="regions-city-name">
-                                                <span><i class="bi bi-geo-alt"></i></span>
-                                                <strong><?= e($city['name']) ?></strong>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="regions-city-state">
-                                                <?= e($city['state_name']) ?>
-                                                <small><?= e($city['state_uf']) ?></small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge rounded-pill <?= (int) $city['active'] && (int) $city['state_active'] ? 'text-bg-success' : 'text-bg-secondary' ?>">
-                                                <?= (int) $city['active'] && (int) $city['state_active'] ? 'Ativa' : 'Oculta' ?>
-                                            </span>
-                                        </td>
-                                        <td class="text-end text-nowrap">
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-light border js-edit-city"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#cityModal"
-                                                data-id="<?= (int) $city['id'] ?>"
-                                                data-state-id="<?= (int) $city['state_id'] ?>"
-                                                data-name="<?= e($city['name']) ?>"
-                                                data-active="<?= (int) $city['active'] ?>"
-                                                title="Editar cidade"
-                                            >
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-
-                                            <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta cidade?');">
-                                                <?= csrfField() ?>
-                                                <input type="hidden" name="action" value="delete_city">
-                                                <input type="hidden" name="id" value="<?= (int) $city['id'] ?>">
-                                                <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir cidade">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endif; ?>
+        <?php if (!$states): ?>
+            <div class="regions-empty">
+                <i class="bi bi-map"></i>
+                <strong>Nenhum estado cadastrado</strong>
+                <span>Cadastre o primeiro estado atendido pela loja.</span>
             </div>
+        <?php else: ?>
+            <div class="regions-state-grid">
+                <?php foreach ($states as $state): ?>
+                    <article class="regions-state-card-v2">
+                        <div class="regions-state-card-top">
+                            <span class="regions-state-uf-v2"><?= e($state['uf']) ?></span>
+                            <span class="regions-status-dot <?= (int) $state['active'] ? 'is-active' : '' ?>">
+                                <?= (int) $state['active'] ? 'Ativo' : 'Oculto' ?>
+                            </span>
+                        </div>
+
+                        <div class="regions-state-card-body">
+                            <strong><?= e($state['name']) ?></strong>
+                            <span>
+                                <?= (int) $state['active_cities_count'] ?> de <?= (int) $state['cities_count'] ?>
+                                cidade<?= (int) $state['cities_count'] === 1 ? '' : 's' ?> ativa<?= (int) $state['active_cities_count'] === 1 ? '' : 's' ?>
+                            </span>
+                        </div>
+
+                        <div class="regions-state-progress">
+                            <?php
+                                $stateTotalCities = max(1, (int) $state['cities_count']);
+                                $stateActivePercent = min(100, round(((int) $state['active_cities_count'] / $stateTotalCities) * 100));
+                            ?>
+                            <span style="width: <?= $stateActivePercent ?>%"></span>
+                        </div>
+
+                        <div class="regions-state-card-actions">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-light border js-edit-state"
+                                data-bs-toggle="modal"
+                                data-bs-target="#stateModal"
+                                data-id="<?= (int) $state['id'] ?>"
+                                data-name="<?= e($state['name']) ?>"
+                                data-uf="<?= e($state['uf']) ?>"
+                                data-active="<?= (int) $state['active'] ?>"
+                            >
+                                <i class="bi bi-pencil me-1"></i>Editar
+                            </button>
+
+                            <form method="post" class="d-inline" onsubmit="return confirm('Excluir este estado?');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="action" value="delete_state">
+                                <input type="hidden" name="id" value="<?= (int) $state['id'] ?>">
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-light border text-danger"
+                                    <?= (int) $state['cities_count'] > 0 ? 'disabled' : '' ?>
+                                    title="<?= (int) $state['cities_count'] > 0 ? 'Remova as cidades antes de excluir' : 'Excluir estado' ?>"
+                                >
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+
+    <section class="admin-card regions-cities-panel">
+        <div class="regions-panel-head">
+            <div>
+                <span class="regions-panel-kicker">Entregas</span>
+                <h3>Cidades atendidas</h3>
+                <p>Estas são as cidades que o cliente pode selecionar ao finalizar um pedido.</p>
+            </div>
+            <span class="regions-panel-count"><?= count($cities) ?></span>
         </div>
-    </div>
+
+        <?php if (!$cities): ?>
+            <div class="regions-empty large">
+                <i class="bi bi-geo-alt"></i>
+                <strong>Nenhuma cidade cadastrada</strong>
+                <span>Cadastre as cidades onde a Flora Camily realiza entregas.</span>
+            </div>
+        <?php else: ?>
+            <div class="regions-city-grid">
+                <?php foreach ($cities as $city): ?>
+                    <?php $cityVisible = (int) $city['active'] === 1 && (int) $city['state_active'] === 1; ?>
+                    <article class="regions-city-card <?= $cityVisible ? '' : 'is-muted' ?>">
+                        <div class="regions-city-card-icon">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+
+                        <div class="regions-city-card-main">
+                            <div class="regions-city-card-title">
+                                <strong><?= e($city['name']) ?></strong>
+                                <span class="regions-status-dot <?= $cityVisible ? 'is-active' : '' ?>">
+                                    <?= $cityVisible ? 'Ativa' : 'Oculta' ?>
+                                </span>
+                            </div>
+                            <span class="regions-city-location">
+                                <?= e($city['state_name']) ?> · <?= e($city['state_uf']) ?>
+                            </span>
+                        </div>
+
+                        <div class="regions-city-card-actions">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-light border js-edit-city"
+                                data-bs-toggle="modal"
+                                data-bs-target="#cityModal"
+                                data-id="<?= (int) $city['id'] ?>"
+                                data-state-id="<?= (int) $city['state_id'] ?>"
+                                data-name="<?= e($city['name']) ?>"
+                                data-active="<?= (int) $city['active'] ?>"
+                                title="Editar cidade"
+                            >
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            <form method="post" class="d-inline" onsubmit="return confirm('Excluir esta cidade?');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="action" value="delete_city">
+                                <input type="hidden" name="id" value="<?= (int) $city['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-light border text-danger" title="Excluir cidade">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </section>
 </div>
 
 <div class="modal fade" id="stateModal" tabindex="-1" aria-labelledby="stateModalLabel" aria-hidden="true">
