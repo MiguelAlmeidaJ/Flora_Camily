@@ -62,9 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int) ($_POST['id'] ?? 0);
             $name = trim((string) ($_POST['name'] ?? ''));
             $description = trim((string) ($_POST['description'] ?? ''));
-            $priceInput = str_replace(['.', ','], ['', '.'], trim((string) ($_POST['price'] ?? '0')));
-            if (preg_match('/^\d+\.\d{3}\.\d{2}$/', trim((string) ($_POST['price'] ?? '')))) {
-                $priceInput = str_replace('.', '', trim((string) $_POST['price']));
+            $priceInput = trim((string) ($_POST['price'] ?? '0'));
+            if (str_contains($priceInput, ',')) {
+                $priceInput = str_replace('.', '', $priceInput);
+                $priceInput = str_replace(',', '.', $priceInput);
             }
             $price = (float) $priceInput;
             $categoryId = (int) ($_POST['category_id'] ?? 0);
