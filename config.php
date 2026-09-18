@@ -259,16 +259,31 @@ function productCategoryName(array $product): string
     return trim((string) ($product['category'] ?? 'Homenagens florais')) ?: 'Homenagens florais';
 }
 
-function crownCategories(bool $onlyActive = true): array
+function categoriesHaveHierarchy(): bool
 {
-    static $activeCache = null;
-    static $allCache = null;
+    static $hasHierarchy = null;
 
-    if ($onlyActive && is_array($activeCache)) {
-        return $activeCache;
+    if (is_bool($hasHierarchy)) {
+        return $hasHierarchy;
     }
-    if (!$onlyActive && is_array($allCache)) {
-        return $allCache;
+
+    try {
+        $stmt = db()->query("SHOW COLUMNS FROM categories LIKE 'parent_id'");
+        $hasHierarchy = (bool) $stmt->fetch();
+    } catch (Throwable $e) {
+        $hasHierarchy = false;
+    }
+
+    return $hasHierarchy;
+}
+
+function catalogCategories(bool $onlyActive = true): array
+{
+    static $cache = [];
+
+    $cacheKey = $onlyActive ? 'active' : 'all';
+    if (isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
     }
 
     try {
@@ -276,19 +291,163 @@ function crownCategories(bool $onlyActive = true): array
         if ($onlyActive) {
             $sql .= ' WHERE active = 1';
         }
-        $sql .= ' ORDER BY sort_order ASC, name ASC';
-        $rows = db()->query($sql)->fetchAll();
+        $sql .= categoriesHaveHierarchy()
+            ? ' ORDER BY COALESCE(parent_id, id), parent_id IS NOT NULL, sort_order ASC, name ASC'
+            : ' ORDER BY sort_order ASC, name ASC';
+
+        $cache[$cacheKey] = db()->query($sql)->fetchAll();
     } catch (Throwable $e) {
-        $rows = [];
+        $cache[$cacheKey] = [];
     }
 
-    if ($onlyActive) {
-        $activeCache = $rows;
-    } else {
-        $allCache = $rows;
+    return $cache[$cacheKey];
+}
+
+function categoryTree(bool $onlyActive = true): array
+{
+    $categories = catalogCategories($onlyActive);
+
+    if (!categoriesHaveHierarchy()) {
+        return [[
+            'id' => 0,
+            'name' => 'Coroas',
+            'slug' => 'coroas',
+            'active' => 1,
+            'sort_order' => 0,
+            'parent_id' => null,
+            'children' => $categories,
+        ]];
     }
 
-    return $rows;
+    $roots = [];
+    $childrenByParent = [];
+
+    foreach ($categories as $category) {
+        $parentId = $category['parent_id'] !== null ? (int) $category['parent_id'] : null;
+
+        if ($parentId === null) {
+            $category['children'] = [];
+            $roots[(int) $category['id']] = $category;
+            continue;
+        }
+
+        $childrenByParent[$parentId][] = $category;
+    }
+
+    foreach ($roots as $rootId => &$root) {
+        $root['children'] = $childrenByParent[$rootId] ?? [];
+    }
+    unset($root);
+
+    return array_values($roots);
+}
+
+function rootCategories(bool $onlyActive = true): array
+{
+    return categoryTree($onlyActive);
+}
+
+function productCategoryOptions(bool $onlyActive = true): array
+{
+    $categories = catalogCategories($onlyActive);
+
+    if (!categoriesHaveHierarchy()) {
+        return array_map(static function (array $category): array {
+            $category['parent_name'] = null;
+            return $category;
+        }, $categories);
+    }
+
+    $hasChildren = [];
+    $byId = [];
+
+    foreach ($categories as $category) {
+        $id = (int) $category['id'];
+        $byId[$id] = $category;
+
+        if ($category['parent_id'] !== null) {
+            $hasChildren[(int) $category['parent_id']] = true;
+        }
+    }
+
+    $options = [];
+    foreach ($categories as $category) {
+        $id = (int) $category['id'];
+
+        if (isset($hasChildren[$id])) {
+            continue;
+        }
+
+        $parentName = null;
+        if ($category['parent_id'] !== null) {
+            $parent = $byId[(int) $category['parent_id']] ?? null;
+            $parentName = $parent['name'] ?? null;
+        }
+
+        $category['parent_name'] = $parentName;
+        $options[] = $category;
+    }
+
+    usort($options, static function (array $a, array $b): int {
+        $parentCompare = strcmp((string) ($a['parent_name'] ?? ''), (string) ($b['parent_name'] ?? ''));
+        if ($parentCompare !== 0) {
+            return $parentCompare;
+        }
+
+        return ((int) $a['sort_order'] <=> (int) $b['sort_order'])
+            ?: strcmp((string) $a['name'], (string) $b['name']);
+    });
+
+    return $options;
+}
+
+function categoryIdsForSlug(string $slug, bool $onlyActive = true): array
+{
+    $categories = catalogCategories($onlyActive);
+    $targetId = null;
+    $childrenByParent = [];
+
+    foreach ($categories as $category) {
+        $id = (int) $category['id'];
+
+        if ((string) $category['slug'] === $slug) {
+            $targetId = $id;
+        }
+
+        if (categoriesHaveHierarchy() && $category['parent_id'] !== null) {
+            $childrenByParent[(int) $category['parent_id']][] = $id;
+        }
+    }
+
+    if ($targetId === null) {
+        return [];
+    }
+
+    $ids = [];
+    $walk = static function (int $id) use (&$walk, &$ids, $childrenByParent): void {
+        if (in_array($id, $ids, true)) {
+            return;
+        }
+
+        $ids[] = $id;
+        foreach ($childrenByParent[$id] ?? [] as $childId) {
+            $walk((int) $childId);
+        }
+    };
+
+    $walk($targetId);
+    return $ids;
+}
+
+function crownCategories(bool $onlyActive = true): array
+{
+    foreach (categoryTree($onlyActive) as $root) {
+        if ((string) ($root['slug'] ?? '') === 'coroas') {
+            return $root['children'] ?: [$root];
+        }
+    }
+
+    return productCategoryOptions($onlyActive);
 }
 
 function adminLoggedIn(): bool
