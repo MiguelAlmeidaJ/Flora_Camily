@@ -3,3 +3,5 @@ uploads/*
 !uploads/.htaccess
 .DS_Store
 Thumbs.db
+
+/vendor/
