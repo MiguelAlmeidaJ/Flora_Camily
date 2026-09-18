@@ -11,13 +11,16 @@ CREATE TABLE IF NOT EXISTS admin_users (
 
 CREATE TABLE IF NOT EXISTS categories (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    parent_id INT UNSIGNED NULL,
     name VARCHAR(120) NOT NULL,
     slug VARCHAR(140) NOT NULL UNIQUE,
     active TINYINT(1) NOT NULL DEFAULT 1,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_categories_active_sort (active, sort_order)
+    INDEX idx_categories_active_sort (active, sort_order),
+    INDEX idx_categories_parent_sort (parent_id, sort_order),
+    CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS products (
