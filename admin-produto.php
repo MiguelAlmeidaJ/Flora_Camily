@@ -199,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories = crownCategories(false);
+$categories = productCategoryOptions(false);
 $isEditing = !empty($product['id']);
 
 $adminPage = 'produtos';
@@ -281,11 +281,11 @@ require __DIR__ . '/includes/admin-shell-start.php';
                                     value="<?= (int) $category['id'] ?>"
                                     <?= (int) ($product['category_id'] ?? 0) === (int) $category['id'] ? 'selected' : '' ?>
                                 >
-                                    <?= e($category['name']) ?><?= !(int) $category['active'] ? ' (oculta)' : '' ?>
+                                    <?= !empty($category['parent_name']) ? e($category['parent_name']) . ' → ' : '' ?><?= e($category['name']) ?><?= !(int) $category['active'] ? ' (oculta)' : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="form-text">As categorias também alimentam o menu “Coroas” do site.</div>
+                        <div class="form-text">Produtos são vinculados às subcategorias ou a categorias que não possuem níveis abaixo.</div>
                     </div>
 
                     <div class="col-md-5">
