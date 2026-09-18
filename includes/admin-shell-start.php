@@ -78,16 +78,26 @@ $adminMenu = isDev()
         <?php endif; ?>
 
         <div class="admin-sidebar-footer">
-            <div class="admin-user-pill">
-                <span class="admin-user-avatar"><i class="bi bi-person"></i></span>
-                <div class="min-w-0 flex-grow-1">
-                    <strong class="text-truncate d-block"><?= e((string) ($_SESSION['admin_username'] ?? 'Usuário')) ?></strong>
-                    <small><?= strtoupper(e($adminRole)) ?></small>
+            <div class="admin-sidebar-account-card">
+                <div class="admin-user-pill">
+                    <span class="admin-user-avatar"><i class="bi bi-person"></i></span>
+                    <div class="min-w-0 flex-grow-1">
+                        <strong class="text-truncate d-block"><?= e((string) ($_SESSION['admin_username'] ?? 'Usuário')) ?></strong>
+                        <small><?= strtoupper(e($adminRole)) ?></small>
+                    </div>
+                    <span class="admin-role-dot" title="<?= strtoupper(e($adminRole)) ?>"></span>
                 </div>
-            </div>
-            <div class="d-grid gap-2 mt-3">
-                <a href="index.php" target="_blank" class="btn btn-sm btn-light border"><i class="bi bi-box-arrow-up-right me-1"></i>Ver site</a>
-                <a href="admin.php?logout=1" class="btn btn-sm btn-outline-danger"><i class="bi bi-box-arrow-right me-1"></i>Sair</a>
+
+                <div class="admin-sidebar-account-actions">
+                    <a href="index.php" target="_blank" class="admin-account-action">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <span>Ver site</span>
+                    </a>
+                    <a href="admin.php?logout=1" class="admin-account-action is-danger">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Sair</span>
+                    </a>
+                </div>
             </div>
         </div>
     </aside>
