@@ -34,9 +34,16 @@
 
 <div class="floating-actions" aria-label="Ações rápidas">
     <?php if (cartCount() > 0): ?>
-        <a href="carrinho.php" class="floating-cart" aria-label="Abrir carrinho com <?= cartCount() ?> item<?= cartCount() === 1 ? '' : 's' ?>">
-            <span class="floating-cart-icon"><i class="bi bi-bag-heart"></i><span><?= cartCount() ?></span></span>
-            <span class="floating-cart-text">Ver carrinho</span>
+        <a
+            href="carrinho.php"
+            class="floating-cart"
+            aria-label="Abrir carrinho com <?= cartCount() ?> item<?= cartCount() === 1 ? '' : 's' ?>"
+            title="Ver carrinho"
+        >
+            <span class="floating-cart-icon">
+                <i class="bi bi-bag-heart"></i>
+                <span><?= cartCount() ?></span>
+            </span>
         </a>
     <?php endif; ?>
     <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener" class="floating-whatsapp" aria-label="Comprar pelo WhatsApp" title="Comprar pelo WhatsApp">
