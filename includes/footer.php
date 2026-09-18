@@ -15,7 +15,7 @@
             <div class="col-6 col-lg-3">
                 <h6>Navegação</h6>
                 <a href="index.php">Início</a>
-                <a href="loja.php">Homenagens</a>
+                <a href="loja.php">Catálogo</a>
                 <?php if (cartCount() > 0): ?><a href="carrinho.php">Carrinho</a><?php endif; ?>
             </div>
 
