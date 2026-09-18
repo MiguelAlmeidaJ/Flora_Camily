@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS migration_history (
     applied_by VARCHAR(80) NULL
 ) ENGINE=InnoDB;
 
+-- Registra somente esta migration. As anteriores devem ser registradas apenas quando realmente aplicadas.
 INSERT IGNORE INTO migration_history (migration_name, applied_by) VALUES
-('2026-09-17-order-flow.sql', 'bootstrap'),
-('2026-09-17-categories-users-dev.sql', 'bootstrap'),
 ('2026-09-17-admin-sidebar-settings.sql', 'bootstrap');
