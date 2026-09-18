@@ -62,57 +62,7 @@ $heroDescription = $selectedCategory
     ? 'Encontre a homenagem ideal dentro desta seleção. Nossa equipe acompanha cada pedido até a entrega.'
     : 'Escolha com tranquilidade entre nossas homenagens florais. Cada pedido é analisado e acompanhado pela nossa equipe.';
 ?>
-<section class="catalog-hero">
-    <div class="container">
-        <div class="catalog-hero-inner">
-            <div class="catalog-hero-copy">
-                <div class="catalog-breadcrumb">
-                    <a href="index.php">Início</a>
-                    <i class="bi bi-chevron-right"></i>
-                    <a href="loja.php">Catálogo</a>
-                    <?php if ($selectedParent): ?>
-                        <i class="bi bi-chevron-right"></i>
-                        <a href="loja.php?categoria=<?= urlencode((string) $selectedParent['slug']) ?>">
-                            <?= e($selectedParent['name']) ?>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($selectedCategory): ?>
-                        <i class="bi bi-chevron-right"></i>
-                        <span><?= e($selectedCategory['name']) ?></span>
-                    <?php endif; ?>
-                </div>
-
-                <span class="eyebrow">
-                    <span class="eyebrow-dot"></span>
-                    <?= $selectedCategory ? 'Seleção do catálogo' : 'Homenagens florais' ?>
-                </span>
-
-                <h1><?= e($heroTitle) ?></h1>
-                <p><?= e($heroDescription) ?></p>
-            </div>
-
-            <div class="catalog-hero-meta">
-                <div class="catalog-hero-count">
-                    <strong><?= count($products) ?></strong>
-                    <span><?= count($products) === 1 ? 'produto disponível' : 'produtos disponíveis' ?></span>
-                </div>
-
-                <div class="catalog-hero-service">
-                    <i class="bi bi-flower1"></i>
-                    <div>
-                        <strong>Atendimento humano</strong>
-                        <span>Do pedido até a entrega</span>
-                    </div>
-                </div>
-            </div>
-
-            <span class="catalog-hero-orbit orbit-a"></span>
-            <span class="catalog-hero-orbit orbit-b"></span>
-        </div>
-    </div>
-</section>
-
-<section class="catalog-section">
+<section class="catalog-section catalog-section-without-hero">
     <div class="container">
         <?php if ($categoryTree): ?>
             <div class="catalog-filter-panel">
