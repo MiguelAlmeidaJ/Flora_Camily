@@ -41,6 +41,30 @@ CREATE TABLE IF NOT EXISTS products (
     CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS service_states (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    uf CHAR(2) NOT NULL UNIQUE,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_service_states_active_sort (active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS service_cities (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    state_id INT UNSIGNED NOT NULL,
+    name VARCHAR(140) NOT NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_service_city_state_name (state_id, name),
+    INDEX idx_service_cities_state_active_sort (state_id, active, sort_order),
+    CONSTRAINT fk_service_cities_state FOREIGN KEY (state_id) REFERENCES service_states(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS orders (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(160) NOT NULL,
@@ -129,6 +153,48 @@ INSERT INTO categories (name, slug, parent_id, active, sort_order)
 SELECT 'Coroa de Flores Luxo', 'coroa-de-flores-luxo', (SELECT id FROM categories WHERE slug = 'coroas' LIMIT 1), 1, 30
 WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = 'coroa-de-flores-luxo');
 
+INSERT INTO service_states (name, uf, active, sort_order)
+SELECT 'Minas Gerais', 'MG', 1, 10
+WHERE NOT EXISTS (SELECT 1 FROM service_states WHERE uf = 'MG');
+
+SET @mg_id = (SELECT id FROM service_states WHERE uf = 'MG' LIMIT 1);
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Conselheiro Lafaiete', 1, 10
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Conselheiro Lafaiete');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Congonhas', 1, 20
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Congonhas');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Ouro Branco', 1, 30
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Ouro Branco');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Itaverava', 1, 40
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Itaverava');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Santana', 1, 50
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Santana');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Carandaí', 1, 60
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Carandaí');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Casa Grande', 1, 70
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Casa Grande');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'Queluzito', 1, 80
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'Queluzito');
+
+INSERT INTO service_cities (state_id, name, active, sort_order)
+SELECT @mg_id, 'São Gonçalo', 1, 90
+WHERE @mg_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM service_cities WHERE state_id = @mg_id AND name = 'São Gonçalo');
+
 INSERT INTO admin_users (username, password_hash, role)
 SELECT 'admin', '$2y$12$mCB0v37refyQnuXMzY5Hbudk1HuLuH0KzK5EeDpCxboTyGKIMU49m', 'dev'
 WHERE NOT EXISTS (SELECT 1 FROM admin_users WHERE username = 'admin');
@@ -137,7 +203,8 @@ INSERT IGNORE INTO migration_history (migration_name, applied_by) VALUES
 ('2026-09-17-order-flow.sql', 'bootstrap'),
 ('2026-09-17-categories-users-dev.sql', 'bootstrap'),
 ('2026-09-17-admin-sidebar-settings.sql', 'bootstrap'),
-('2026-09-18-category-hierarchy.sql', 'bootstrap');
+('2026-09-18-category-hierarchy.sql', 'bootstrap'),
+('2026-09-18-service-regions.sql', 'bootstrap');
 
 INSERT INTO products (name, category, category_id, description, price, active, featured)
 SELECT 'Coroa Serenidade', 'Coroa de Flores Simples', (SELECT id FROM categories WHERE slug = 'coroa-de-flores-simples' LIMIT 1), 'Composição elegante em tons suaves para uma homenagem delicada e respeitosa.', 299.90, 1, 1
