@@ -4,11 +4,12 @@ requireAdmin();
 
 $orderId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
 if ($orderId <= 0) {
-    redirect('admin-pedidos.php');
+    redirect('admin-pedidos');
 }
 
 $flash = $_SESSION['admin_flash'] ?? '';
-unset($_SESSION['admin_flash']);
+$flashType = $_SESSION['admin_flash_type'] ?? 'success';
+unset($_SESSION['admin_flash'], $_SESSION['admin_flash_type']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
@@ -58,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
 
         $_SESSION['admin_flash'] = 'Pedido atualizado com sucesso.';
-        redirect('admin-pedido.php?id=' . $orderId);
+        $_SESSION['admin_flash_type'] = 'success';
+        redirect('admin-pedido?id=' . $orderId);
     } catch (Throwable $e) {
         appLog('order.error', [
             'order_id' => $orderId,
@@ -66,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ], 'error');
 
         $flash = $e->getMessage();
+        $flashType = 'danger';
     }
 }
 
@@ -75,7 +78,8 @@ $order = $stmt->fetch();
 
 if (!$order) {
     $_SESSION['admin_flash'] = 'Pedido não encontrado.';
-    redirect('admin-pedidos.php');
+    $_SESSION['admin_flash_type'] = 'danger';
+    redirect('admin-pedidos');
 }
 
 if (!(int) $order['is_read']) {
@@ -112,12 +116,15 @@ require __DIR__ . '/includes/admin-shell-start.php';
 ?>
 
 <?php if ($flash): ?>
-    <div class="alert alert-danger rounded-4"><?= e($flash) ?></div>
+    <div class="alert alert-<?= e($flashType) ?> rounded-4 admin-feedback-alert">
+        <i class="bi <?= $flashType === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle' ?> me-2"></i>
+        <?= e($flash) ?>
+    </div>
 <?php endif; ?>
 
 <div class="order-page">
     <div class="order-page-toolbar">
-        <a href="admin-pedidos.php" class="admin-back-link">
+        <a href="admin-pedidos" class="admin-back-link">
             <i class="bi bi-arrow-left"></i>
             Voltar para pedidos
         </a>
