@@ -6,6 +6,21 @@ if (!$items) {
     redirect('carrinho.php');
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_product_id'])) {
+    verifyCsrf();
+
+    $removeProductId = (int) $_POST['remove_product_id'];
+    if ($removeProductId > 0) {
+        unset($_SESSION['cart'][$removeProductId]);
+    }
+
+    if (!cart()) {
+        redirect('carrinho.php');
+    }
+
+    redirect('checkout.php');
+}
+
 $states = [];
 $serviceCities = [];
 
@@ -380,13 +395,28 @@ require __DIR__ . '/includes/header.php';
                         <div class="vstack gap-3">
                             <?php foreach ($items as $item): ?>
                                 <?php $fallback = empty($item['image']); ?>
-                                <div class="d-flex gap-3 align-items-center">
-                                    <img src="<?= e(productImage($item['image'])) ?>" alt="<?= e($item['name']) ?>" class="checkout-thumb <?= $fallback ? 'logo-fallback' : '' ?>">
-                                    <div class="flex-grow-1 min-w-0">
+                                <div class="checkout-summary-item">
+                                    <img
+                                        src="<?= e(productImage($item['image'])) ?>"
+                                        alt="<?= e($item['name']) ?>"
+                                        class="checkout-thumb <?= $fallback ? 'logo-fallback' : '' ?>"
+                                    >
+                                    <div class="checkout-summary-item-info">
                                         <div class="fw-bold text-dark"><?= e($item['name']) ?></div>
                                         <div class="small text-secondary">Qtd. <?= (int) $item['qty'] ?></div>
                                         <div class="fw-bold mt-1 product-price"><?= money((float) $item['subtotal']) ?></div>
                                     </div>
+                                    <button
+                                        type="submit"
+                                        name="remove_product_id"
+                                        value="<?= (int) $item['id'] ?>"
+                                        class="checkout-remove-item"
+                                        aria-label="Remover <?= e($item['name']) ?> do pedido"
+                                        title="Remover produto"
+                                        formnovalidate
+                                    >
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
                                 </div>
                             <?php endforeach; ?>
                         </div>
