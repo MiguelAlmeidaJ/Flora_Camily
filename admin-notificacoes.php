@@ -42,7 +42,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
     <div class="vstack gap-2">
         <?php if (!$notifications): ?><div class="text-center text-secondary py-5">Nenhuma notificação ainda.</div><?php endif; ?>
         <?php foreach ($notifications as $item): ?>
-            <a href="admin-pedidos.php?order=<?= (int) $item['id'] ?>" class="admin-notification-item text-decoration-none <?= !(int) $item['is_read'] && $item['status'] === 'novo' ? 'unread' : '' ?>">
+            <a href="admin-pedido.php?id=<?= (int) $item['id'] ?>" class="admin-notification-item text-decoration-none <?= !(int) $item['is_read'] && $item['status'] === 'novo' ? 'unread' : '' ?>">
                 <span class="admin-notification-icon"><i class="bi bi-receipt"></i></span>
                 <div class="flex-grow-1 min-w-0">
                     <div class="d-flex justify-content-between gap-3"><strong>Pedido #<?= (int) $item['id'] ?> · <?= e($item['customer_name']) ?></strong><small class="text-secondary text-nowrap"><?= date('d/m H:i', strtotime($item['created_at'])) ?></small></div>
