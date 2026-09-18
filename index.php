@@ -8,7 +8,7 @@ $stmt = db()->query(
      LEFT JOIN categories c ON c.id = p.category_id
      WHERE p.active = 1
      ORDER BY p.featured DESC, p.created_at DESC
-     LIMIT 6'
+     LIMIT 12'
 );
 $products = $stmt->fetchAll();
 
@@ -167,13 +167,26 @@ foreach ($products as $candidate) {
                     Seleção especial
                 </span>
                 <h2>Homenagens em destaque</h2>
-                <p>Opções preparadas para expressar carinho, respeito e presença.</p>
+                <p>Conheça algumas opções do catálogo. Os produtos em destaque aparecem sempre primeiro.</p>
             </div>
 
-            <a href="loja.php" class="home-section-link">
-                Ver todas
-                <i class="bi bi-arrow-right"></i>
-            </a>
+            <div class="home-carousel-head-actions">
+                <a href="loja.php" class="home-section-link">
+                    Ver todas
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+
+                <?php if (count($products) > 4): ?>
+                    <div class="home-carousel-controls" aria-label="Navegação do carrossel">
+                        <button type="button" class="home-carousel-button" data-carousel-prev aria-label="Produtos anteriores">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                        <button type="button" class="home-carousel-button" data-carousel-next aria-label="Próximos produtos">
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
 
         <?php if (!$products): ?>
@@ -183,64 +196,60 @@ foreach ($products as $candidate) {
                 <p>Estamos preparando nosso catálogo.</p>
             </div>
         <?php else: ?>
-            <div class="row g-4">
-                <?php foreach ($products as $product): ?>
-                    <?php $fallback = empty($product['image']); ?>
-                    <div class="col-md-6 col-xl-4">
-                        <article class="home-product-card">
-                            <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-media">
-                                <?php if ($fallback): ?>
-                                    <div class="home-product-placeholder">
-                                        <span class="placeholder-orbit orbit-one"></span>
-                                        <span class="placeholder-orbit orbit-two"></span>
-                                        <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
-                                    </div>
-                                <?php else: ?>
-                                    <img
-                                        src="<?= e(productImage($product['image'])) ?>"
-                                        alt="<?= e($product['name']) ?>"
-                                        class="home-product-image"
-                                    >
-                                <?php endif; ?>
+            <div class="home-products-carousel" data-product-carousel>
+                <div class="home-products-viewport">
+                    <div class="home-products-track">
+                        <?php foreach ($products as $product): ?>
+                            <?php $fallback = empty($product['image']); ?>
+                            <div class="home-product-slide">
+                                <article class="home-product-card is-simple">
+                                    <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-media">
+                                        <?php if ($fallback): ?>
+                                            <div class="home-product-placeholder">
+                                                <span class="placeholder-orbit orbit-one"></span>
+                                                <span class="placeholder-orbit orbit-two"></span>
+                                                <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
+                                            </div>
+                                        <?php else: ?>
+                                            <img
+                                                src="<?= e(productImage($product['image'])) ?>"
+                                                alt="<?= e($product['name']) ?>"
+                                                class="home-product-image"
+                                            >
+                                        <?php endif; ?>
 
-                                <span class="home-product-category">
-                                    <?= e(productCategoryName($product)) ?>
-                                </span>
-
-                                <span class="home-product-open">
-                                    <i class="bi bi-arrow-up-right"></i>
-                                </span>
-                            </a>
-
-                            <div class="home-product-body">
-                                <div>
-                                    <h3>
-                                        <a href="produto.php?id=<?= (int) $product['id'] ?>">
-                                            <?= e($product['name']) ?>
-                                        </a>
-                                    </h3>
-
-                                    <p><?= e(excerpt((string) $product['description'], 105)) ?></p>
-                                </div>
-
-                                <div class="home-product-footer">
-                                    <div>
-                                        <small>A partir de</small>
-                                        <strong><?= money((float) $product['price']) ?></strong>
-                                    </div>
-
-                                    <a
-                                        href="produto.php?id=<?= (int) $product['id'] ?>"
-                                        class="home-product-button"
-                                    >
-                                        Ver detalhes
-                                        <i class="bi bi-arrow-right"></i>
+                                        <?php if ((int) $product['featured'] === 1): ?>
+                                            <span class="home-product-featured">Destaque</span>
+                                        <?php endif; ?>
                                     </a>
-                                </div>
+
+                                    <div class="home-product-body">
+                                        <div class="home-product-copy">
+                                            <span class="home-product-category-text">
+                                                <?= e(productCategoryName($product)) ?>
+                                            </span>
+
+                                            <h3>
+                                                <a href="produto.php?id=<?= (int) $product['id'] ?>">
+                                                    <?= e($product['name']) ?>
+                                                </a>
+                                            </h3>
+                                        </div>
+
+                                        <div class="home-product-price-block">
+                                            <small>A partir de</small>
+                                            <strong><?= money((float) $product['price']) ?></strong>
+                                        </div>
+
+                                        <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-shop-button">
+                                            Ver produto
+                                        </a>
+                                    </div>
+                                </article>
                             </div>
-                        </article>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                </div>
             </div>
         <?php endif; ?>
     </div>
