@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ], $sent ? 'info' : 'warning');
 
             $_SESSION['admin_flash'] = $sent
-                ? 'E-mail de teste enviado com sucesso pelo SMTP.'
+                ? 'O servidor SMTP aceitou a mensagem para envio. Isso não garante a entrega na caixa de destino; confira também spam e autenticação SPF/DKIM.'
                 : 'Não foi possível enviar o teste. Consulte os Logs do DEV para ver o erro SMTP.';
             redirect('admin-configuracoes.php#sistema');
         }
