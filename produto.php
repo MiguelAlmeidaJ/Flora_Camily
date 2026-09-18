@@ -3,7 +3,7 @@ require __DIR__ . '/config.php';
 
 $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 if (!$id) {
-    redirect('loja.php');
+    redirect('loja');
 }
 
 $stmt = db()->prepare(
@@ -20,55 +20,311 @@ if (!$product) {
     http_response_code(404);
     $pageTitle = 'Produto não encontrado | Flora Camily';
     require __DIR__ . '/includes/header.php';
-    echo '<section class="py-5"><div class="container text-center py-5"><h1>Homenagem não encontrada</h1><p class="text-secondary">Este item pode não estar mais disponível.</p><a class="btn btn-brand" href="loja.php">Voltar ao catálogo</a></div></section>';
+    echo '<section class="py-5"><div class="container text-center py-5"><h1>Homenagem não encontrada</h1><p class="text-secondary">Este item pode não estar mais disponível.</p><a class="btn btn-brand" href="loja">Voltar ao catálogo</a></div></section>';
     require __DIR__ . '/includes/footer.php';
     exit;
+}
+
+$relatedProducts = [];
+if (!empty($product['category_id'])) {
+    $relatedStmt = db()->prepare(
+        'SELECT p.*, c.name AS category_name, c.slug AS category_slug
+         FROM products p
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE p.active = 1
+           AND p.category_id = ?
+           AND p.id <> ?
+         ORDER BY p.featured DESC, p.created_at DESC
+         LIMIT 3'
+    );
+    $relatedStmt->execute([(int) $product['category_id'], (int) $product['id']]);
+    $relatedProducts = $relatedStmt->fetchAll();
 }
 
 $pageTitle = $product['name'] . ' | Flora Camily';
 require __DIR__ . '/includes/header.php';
 $fallback = empty($product['image']);
 ?>
-<section class="py-5">
-    <div class="container py-lg-4">
-        <div class="row g-5 align-items-start">
-            <div class="col-lg-6">
-                <div class="product-card p-3">
-                    <img src="<?= e(productImage($product['image'])) ?>" alt="<?= e($product['name']) ?>" class="product-image rounded-4 <?= $fallback ? 'logo-fallback' : '' ?>">
+<section class="product-detail-page">
+    <div class="container">
+        <div class="product-detail-grid">
+            <div class="product-detail-media-column">
+                <div class="product-detail-media-card">
+                    <?php if ((int) $product['featured'] === 1): ?>
+                        <span class="product-detail-featured">
+                            <i class="bi bi-stars"></i>Destaque
+                        </span>
+                    <?php endif; ?>
+
+                    <img
+                        src="<?= e(productImage($product['image'])) ?>"
+                        alt="<?= e($product['name']) ?>"
+                        class="product-detail-image <?= $fallback ? 'logo-fallback' : '' ?>"
+                    >
+                </div>
+
+                <div class="product-detail-mini-features">
+                    <div>
+                        <span><i class="bi bi-flower1"></i></span>
+                        <div>
+                            <strong>Homenagem personalizada</strong>
+                            <small>Mensagem da faixa definida no checkout.</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span><i class="bi bi-truck"></i></span>
+                        <div>
+                            <strong>Entrega própria</strong>
+                            <small>Disponível nas regiões atendidas pela loja.</small>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-lg-6">
-                <a href="loja.php" class="small text-decoration-none text-secondary"><i class="bi bi-arrow-left me-1"></i>Voltar ao catálogo</a>
-                <div class="product-category mt-4 mb-2"><?= e(productCategoryName($product)) ?></div>
-                <h1 class="section-title mb-3"><?= e($product['name']) ?></h1>
-                <div class="product-price fs-4 mb-4"><?= money((float) $product['price']) ?></div>
-                <p class="text-secondary lh-lg mb-4"><?= nl2br(e((string) $product['description'])) ?></p>
 
-                <form action="carrinho.php" method="post" class="row g-3 align-items-end">
+            <div class="product-detail-main">
+                <a href="loja" class="product-detail-back">
+                    <i class="bi bi-arrow-left"></i>Voltar ao catálogo
+                </a>
+
+                <span class="product-detail-category"><?= e(productCategoryName($product)) ?></span>
+                <h1><?= e($product['name']) ?></h1>
+
+                <div class="product-detail-price">
+                    <small>A partir de</small>
+                    <strong><?= money((float) $product['price']) ?></strong>
+                </div>
+
+                <?php if (trim((string) $product['description']) !== ''): ?>
+                    <p class="product-detail-lead">
+                        <?= nl2br(e((string) $product['description'])) ?>
+                    </p>
+                <?php endif; ?>
+
+                <div class="product-detail-info-grid">
+                    <div>
+                        <span><i class="bi bi-tag"></i></span>
+                        <div>
+                            <small>Categoria</small>
+                            <strong><?= e(productCategoryName($product)) ?></strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span><i class="bi bi-chat-heart"></i></span>
+                        <div>
+                            <small>Personalização</small>
+                            <strong>Mensagem de faixa</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span><i class="bi bi-geo-alt"></i></span>
+                        <div>
+                            <small>Entrega</small>
+                            <strong>Regiões atendidas</strong>
+                        </div>
+                    </div>
+                    <div>
+                        <span><i class="bi bi-wallet2"></i></span>
+                        <div>
+                            <small>Frete</small>
+                            <strong>Confirmado pela equipe</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <form action="carrinho.php" method="post" class="product-detail-purchase">
                     <?= csrfField() ?>
                     <input type="hidden" name="product_id" value="<?= (int) $product['id'] ?>">
-                    <div class="col-sm-4">
-                        <label for="qty" class="form-label fw-semibold">Quantidade</label>
-                        <input id="qty" type="number" name="qty" class="form-control" min="1" max="20" value="1">
-                    </div>
-                    <div class="col-sm-8">
-                        <div class="product-buy-actions d-grid d-md-flex gap-2">
-                            <button type="submit" name="action" value="add" class="btn btn-outline-brand btn-lg flex-fill">
-                                <i class="bi bi-bag-plus me-2"></i>Adicionar ao carrinho
+
+                    <div class="product-detail-quantity">
+                        <label for="qty">Quantidade</label>
+                        <div class="product-quantity-control">
+                            <button type="button" data-qty-minus aria-label="Diminuir quantidade">
+                                <i class="bi bi-dash"></i>
                             </button>
-                            <button type="submit" name="action" value="buy_now" class="btn btn-brand btn-lg flex-fill">
-                                <i class="bi bi-lightning-charge me-2"></i>Finalizar compra
+                            <input id="qty" type="number" name="qty" min="1" max="20" value="1">
+                            <button type="button" data-qty-plus aria-label="Aumentar quantidade">
+                                <i class="bi bi-plus"></i>
                             </button>
                         </div>
                     </div>
+
+                    <div class="product-detail-actions">
+                        <button type="submit" name="action" value="add" class="btn product-add-cart">
+                            <i class="bi bi-bag-plus"></i>
+                            Adicionar ao carrinho
+                        </button>
+
+                        <button type="submit" name="action" value="buy_now" class="btn product-buy-now">
+                            <i class="bi bi-lightning-charge"></i>
+                            Finalizar compra
+                        </button>
+                    </div>
                 </form>
 
-                <div class="whatsapp-note rounded-4 p-3 mt-4 small text-secondary">
-                    <i class="bi bi-info-circle me-1"></i>
-                    O pedido é enviado para análise da equipe. O frete é calculado manualmente e, se necessário, entraremos em contato pelo WhatsApp para ajustar os detalhes.
+                <div class="product-detail-order-note">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <strong>Seu pedido passa por confirmação</strong>
+                        <span>Após o envio, a equipe confere os detalhes, confirma o frete e entra em contato pelo WhatsApp somente se algum ajuste for necessário.</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <section class="product-about-section">
+            <div class="product-about-main">
+                <span class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Sobre esta homenagem
+                </span>
+                <h2>Detalhes do produto</h2>
+
+                <div class="product-description-card">
+                    <?php if (trim((string) $product['description']) !== ''): ?>
+                        <p><?= nl2br(e((string) $product['description'])) ?></p>
+                    <?php else: ?>
+                        <p>Uma homenagem floral preparada para expressar cuidado e respeito. Os detalhes do pedido são confirmados pela equipe antes da preparação.</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <aside class="product-service-card">
+                <span class="product-service-kicker">Do pedido à entrega</span>
+                <h3>Como funciona</h3>
+
+                <div class="product-service-steps">
+                    <div>
+                        <span>01</span>
+                        <div>
+                            <strong>Escolha a homenagem</strong>
+                            <small>Adicione ao carrinho ou finalize a compra diretamente.</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span>02</span>
+                        <div>
+                            <strong>Informe os detalhes</strong>
+                            <small>No checkout, preencha local, data, horário e mensagem da faixa.</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span>03</span>
+                        <div>
+                            <strong>Nossa equipe confirma</strong>
+                            <small>O pedido e o frete são analisados antes da preparação.</small>
+                        </div>
+                    </div>
+                    <div>
+                        <span>04</span>
+                        <div>
+                            <strong>Entrega acompanhada</strong>
+                            <small>Você acompanha o andamento até a conclusão do pedido.</small>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <section class="product-help-strip">
+            <div>
+                <span><i class="bi bi-whatsapp"></i></span>
+                <div>
+                    <strong>Precisa tirar uma dúvida antes de comprar?</strong>
+                    <small>Fale diretamente com a equipe da Flora Camily.</small>
+                </div>
+            </div>
+
+            <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener" class="btn product-help-button">
+                Falar pelo WhatsApp
+                <i class="bi bi-arrow-up-right"></i>
+            </a>
+        </section>
+
+        <?php if ($relatedProducts): ?>
+            <section class="product-related-section">
+                <div class="product-related-head">
+                    <div>
+                        <span class="eyebrow">
+                            <span class="eyebrow-dot"></span>
+                            Você também pode gostar
+                        </span>
+                        <h2>Outras homenagens</h2>
+                    </div>
+
+                    <a href="loja?categoria=<?= urlencode((string) ($product['category_slug'] ?? '')) ?>">
+                        Ver categoria
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="product-related-grid">
+                    <?php foreach ($relatedProducts as $related): ?>
+                        <article class="catalog-product-card">
+                            <a href="produto?id=<?= (int) $related['id'] ?>" class="catalog-product-media">
+                                <img
+                                    src="<?= e(productImage($related['image'])) ?>"
+                                    alt="<?= e($related['name']) ?>"
+                                    class="<?= empty($related['image']) ? 'logo-fallback' : '' ?>"
+                                >
+                                <?php if ((int) $related['featured'] === 1): ?>
+                                    <span class="catalog-product-featured">
+                                        <i class="bi bi-stars"></i>Destaque
+                                    </span>
+                                <?php endif; ?>
+                                <span class="catalog-product-arrow">
+                                    <i class="bi bi-arrow-up-right"></i>
+                                </span>
+                            </a>
+
+                            <div class="catalog-product-content">
+                                <span class="catalog-product-category"><?= e(productCategoryName($related)) ?></span>
+                                <h3>
+                                    <a href="produto?id=<?= (int) $related['id'] ?>">
+                                        <?= e($related['name']) ?>
+                                    </a>
+                                </h3>
+                                <p><?= e(excerpt((string) $related['description'], 90)) ?></p>
+                                <div class="catalog-product-bottom">
+                                    <div class="catalog-product-price">
+                                        <small>A partir de</small>
+                                        <strong><?= money((float) $related['price']) ?></strong>
+                                    </div>
+                                    <a href="produto?id=<?= (int) $related['id'] ?>" class="catalog-product-cta">
+                                        Ver produto
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+        <?php endif; ?>
     </div>
 </section>
+
+<script>
+(function () {
+    const input = document.getElementById('qty');
+    const minus = document.querySelector('[data-qty-minus]');
+    const plus = document.querySelector('[data-qty-plus]');
+
+    if (!input || !minus || !plus) return;
+
+    const clamp = (value) => Math.max(1, Math.min(20, Number(value) || 1));
+
+    minus.addEventListener('click', () => {
+        input.value = clamp(Number(input.value) - 1);
+    });
+
+    plus.addEventListener('click', () => {
+        input.value = clamp(Number(input.value) + 1);
+    });
+
+    input.addEventListener('change', () => {
+        input.value = clamp(input.value);
+    });
+})();
+</script>
+
 <?php require __DIR__ . '/includes/footer.php'; ?>
