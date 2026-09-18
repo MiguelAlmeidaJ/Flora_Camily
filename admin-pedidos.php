@@ -5,72 +5,67 @@ requireAdmin();
 $flash = $_SESSION['admin_flash'] ?? '';
 unset($_SESSION['admin_flash']);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verifyCsrf();
-    $action = (string) ($_POST['action'] ?? '');
-
-    try {
-        if ($action === 'update_order') {
-            $orderId = (int) ($_POST['order_id'] ?? 0);
-            $status = (string) ($_POST['status'] ?? 'novo');
-            $shippingRaw = trim((string) ($_POST['shipping_fee'] ?? ''));
-
-            if ($orderId <= 0 || !array_key_exists($status, orderStatusOptions())) {
-                throw new RuntimeException('Pedido ou status inválido.');
-            }
-
-            $stmt = db()->prepare('SELECT products_total FROM orders WHERE id = ?');
-            $stmt->execute([$orderId]);
-            $productsTotal = $stmt->fetchColumn();
-            if ($productsTotal === false) {
-                throw new RuntimeException('Pedido não encontrado.');
-            }
-
-            $shippingFee = null;
-            if ($shippingRaw !== '') {
-                $shippingFee = (float) str_replace(',', '.', $shippingRaw);
-                if ($shippingFee < 0) {
-                    throw new RuntimeException('O frete não pode ser negativo.');
-                }
-            }
-
-            $total = (float) $productsTotal + ($shippingFee ?? 0.0);
-            db()->prepare('UPDATE orders SET status = ?, shipping_fee = ?, total = ?, is_read = 1 WHERE id = ?')
-                ->execute([$status, $shippingFee, $total, $orderId]);
-            appLog('order.update', ['order_id' => $orderId, 'status' => $status, 'shipping_fee' => $shippingFee, 'total' => $total]);
-            $_SESSION['admin_flash'] = 'Pedido atualizado com sucesso.';
-            redirect('admin-pedidos.php?order=' . $orderId);
-        }
-    } catch (Throwable $e) {
-        appLog('order.error', ['message' => $e->getMessage()], 'error');
-        $flash = $e->getMessage();
-    }
-}
-
-$selectedOrder = null;
-$selectedOrderItems = [];
-if (!empty($_GET['order'])) {
-    $orderId = (int) $_GET['order'];
-    $stmt = db()->prepare('SELECT * FROM orders WHERE id = ?');
-    $stmt->execute([$orderId]);
-    $selectedOrder = $stmt->fetch() ?: null;
-    if ($selectedOrder) {
-        db()->prepare('UPDATE orders SET is_read = 1 WHERE id = ?')->execute([$orderId]);
-        $selectedOrder['is_read'] = 1;
-        $itemsStmt = db()->prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id');
-        $itemsStmt->execute([$orderId]);
-        $selectedOrderItems = $itemsStmt->fetchAll();
-    }
-}
-
 $statusFilter = trim((string) ($_GET['status'] ?? ''));
-if ($statusFilter !== '' && array_key_exists($statusFilter, orderStatusOptions())) {
-    $stmt = db()->prepare('SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC LIMIT 100');
-    $stmt->execute([$statusFilter]);
-    $orders = $stmt->fetchAll();
-} else {
+if ($statusFilter !== '' && !array_key_exists($statusFilter, orderStatusOptions())) {
     $statusFilter = '';
-    $orders = db()->query('SELECT * FROM orders ORDER BY created_at DESC LIMIT 100')->fetchAll();
+}
+
+$search = trim((string) ($_GET['q'] ?? ''));
+$where = [];
+$params = [];
+
+if ($statusFilter !== '') {
+    $where[] = 'status = ?';
+    $params[] = $statusFilter;
+}
+
+if ($search !== '') {
+    $searchDigits = preg_replace('/\D+/', '', $search) ?: '';
+    $clauses = [
+        'customer_name LIKE ?',
+        'customer_email LIKE ?',
+        'customer_phone LIKE ?',
+        'honoree_name LIKE ?',
+        'city LIKE ?',
+    ];
+    $like = '%' . $search . '%';
+    array_push($params, $like, $like, $like, $like, $like);
+
+    if (ctype_digit($search)) {
+        $clauses[] = 'id = ?';
+        $params[] = (int) $search;
+    } elseif ($searchDigits !== '' && $searchDigits !== $search) {
+        $clauses[] = "REPLACE(REPLACE(REPLACE(REPLACE(customer_phone, '(', ''), ')', ''), '-', ''), ' ', '') LIKE ?";
+        $params[] = '%' . $searchDigits . '%';
+    }
+
+    $where[] = '(' . implode(' OR ', $clauses) . ')';
+}
+
+$sql = 'SELECT * FROM orders';
+if ($where) {
+    $sql .= ' WHERE ' . implode(' AND ', $where);
+}
+$sql .= ' ORDER BY created_at DESC LIMIT 150';
+
+$stmt = db()->prepare($sql);
+$stmt->execute($params);
+$orders = $stmt->fetchAll();
+
+$statusCounts = array_fill_keys(array_keys(orderStatusOptions()), 0);
+$totalOrders = 0;
+try {
+    $countRows = db()->query('SELECT status, COUNT(*) AS total FROM orders GROUP BY status')->fetchAll();
+    foreach ($countRows as $row) {
+        $status = (string) $row['status'];
+        $count = (int) $row['total'];
+        if (array_key_exists($status, $statusCounts)) {
+            $statusCounts[$status] = $count;
+        }
+        $totalOrders += $count;
+    }
+} catch (Throwable $e) {
+    $totalOrders = count($orders);
 }
 
 $adminPage = 'pedidos';
@@ -78,85 +73,167 @@ $adminTitle = 'Pedidos';
 $adminSubtitle = 'Acompanhe cada venda da análise até a entrega.';
 require __DIR__ . '/includes/admin-shell-start.php';
 ?>
-<?php if ($flash): ?><div class="alert alert-info rounded-4"><?= e($flash) ?></div><?php endif; ?>
 
-<div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="admin-pedidos.php" class="btn btn-sm <?= $statusFilter === '' ? 'btn-brand' : 'btn-light border' ?>">Todos</a>
-    <?php foreach (orderStatusOptions() as $value => $label): ?>
-        <a href="admin-pedidos.php?status=<?= urlencode($value) ?>" class="btn btn-sm <?= $statusFilter === $value ? 'btn-brand' : 'btn-light border' ?>"><?= e($label) ?></a>
-    <?php endforeach; ?>
-</div>
+<?php if ($flash): ?>
+    <div class="alert alert-info rounded-4"><?= e($flash) ?></div>
+<?php endif; ?>
 
-<div class="row g-4 align-items-start">
-    <div class="<?= $selectedOrder ? 'col-xxl-7' : 'col-12' ?>">
-        <div class="admin-card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div><h2 class="h4 mb-1">Lista de pedidos</h2><div class="small text-secondary"><?= count($orders) ?> registro(s) exibido(s)</div></div>
+<div class="orders-page">
+    <div class="admin-card orders-overview-card mb-4">
+        <div class="orders-overview-head">
+            <div>
+                <span class="orders-kicker">Gestão de vendas</span>
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <h2 class="h4 mb-0">Pedidos</h2>
+                    <span class="badge text-bg-light border rounded-pill"><?= $totalOrders ?></span>
+                </div>
+                <p class="small text-secondary mb-0 mt-1">Filtre, localize e acompanhe os pedidos da loja.</p>
             </div>
-            <div class="table-responsive">
-                <table class="table align-middle mb-0 admin-orders-table">
-                    <thead><tr><th>Pedido</th><th>Cliente</th><th>Entrega</th><th>Status</th><th>Total</th><th></th></tr></thead>
-                    <tbody>
-                    <?php if (!$orders): ?><tr><td colspan="6" class="text-center py-5 text-secondary">Nenhum pedido encontrado.</td></tr><?php endif; ?>
-                    <?php foreach ($orders as $order): ?>
-                        <tr class="<?= !(int) $order['is_read'] && $order['status'] === 'novo' ? 'order-unread' : '' ?>">
-                            <td><strong>#<?= (int) $order['id'] ?></strong><div class="small text-secondary"><?= date('d/m/Y H:i', strtotime($order['created_at'])) ?></div></td>
-                            <td><strong><?= e($order['customer_name']) ?></strong><div class="small text-secondary"><?= e($order['customer_phone']) ?></div></td>
-                            <td><?= e($order['city']) ?>/<?= e($order['state']) ?><div class="small text-secondary"><?= $order['delivery_date'] ? date('d/m/Y', strtotime($order['delivery_date'])) : '—' ?><?= $order['delivery_time'] ? ' · ' . substr((string) $order['delivery_time'], 0, 5) : '' ?></div></td>
-                            <td><span class="badge <?= e(orderStatusClass((string) $order['status'])) ?>"><?= e(orderStatusLabel((string) $order['status'])) ?></span></td>
-                            <td class="text-nowrap fw-semibold"><?= money((float) $order['total']) ?></td>
-                            <td class="text-end"><a href="admin-pedidos.php?order=<?= (int) $order['id'] ?><?= $statusFilter ? '&status=' . urlencode($statusFilter) : '' ?>" class="btn btn-sm btn-light border">Ver</a></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
+
+            <form method="get" class="orders-search">
+                <?php if ($statusFilter !== ''): ?>
+                    <input type="hidden" name="status" value="<?= e($statusFilter) ?>">
+                <?php endif; ?>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input
+                        type="search"
+                        name="q"
+                        class="form-control border-start-0"
+                        value="<?= e($search) ?>"
+                        placeholder="Pedido, cliente, telefone..."
+                        aria-label="Buscar pedidos"
+                    >
+                    <?php if ($search !== ''): ?>
+                        <a href="admin-pedidos.php<?= $statusFilter !== '' ? '?status=' . urlencode($statusFilter) : '' ?>" class="btn btn-light border">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </form>
+        </div>
+
+        <div class="orders-status-tabs">
+            <a
+                href="admin-pedidos.php<?= $search !== '' ? '?q=' . urlencode($search) : '' ?>"
+                class="orders-status-tab <?= $statusFilter === '' ? 'active' : '' ?>"
+            >
+                <span>Todos</span>
+                <strong><?= $totalOrders ?></strong>
+            </a>
+
+            <?php foreach (orderStatusOptions() as $value => $label): ?>
+                <?php
+                    $query = ['status' => $value];
+                    if ($search !== '') $query['q'] = $search;
+                ?>
+                <a
+                    href="admin-pedidos.php?<?= e(http_build_query($query)) ?>"
+                    class="orders-status-tab <?= $statusFilter === $value ? 'active' : '' ?>"
+                >
+                    <span><?= e($label) ?></span>
+                    <strong><?= (int) ($statusCounts[$value] ?? 0) ?></strong>
+                </a>
+            <?php endforeach; ?>
         </div>
     </div>
 
-    <?php if ($selectedOrder): ?>
-        <div class="col-xxl-5">
-            <div class="admin-card order-detail-card sticky-xl-top" style="top:24px">
-                <div class="p-4 border-bottom d-flex justify-content-between align-items-start gap-3">
-                    <div><div class="small text-secondary">Pedido</div><h2 class="h3 mb-1">#<?= (int) $selectedOrder['id'] ?></h2><span class="badge <?= e(orderStatusClass((string) $selectedOrder['status'])) ?>"><?= e(orderStatusLabel((string) $selectedOrder['status'])) ?></span></div>
-                    <a href="admin-pedidos.php" class="btn btn-sm btn-light border"><i class="bi bi-x-lg"></i></a>
-                </div>
-                <div class="p-4 border-bottom">
-                    <h3 class="h6 text-uppercase text-secondary">Cliente</h3>
-                    <div class="fw-bold"><?= e($selectedOrder['customer_name']) ?></div>
-                    <div class="small text-secondary"><?= e($selectedOrder['customer_email']) ?></div>
-                    <div class="small text-secondary mb-3"><?= e($selectedOrder['customer_phone']) ?></div>
-                    <a href="<?= e(customerWhatsAppUrl((string) $selectedOrder['customer_phone'], (int) $selectedOrder['id'])) ?>" target="_blank" rel="noopener" class="btn btn-success btn-sm rounded-pill"><i class="bi bi-whatsapp me-1"></i>Chamar cliente</a>
-                </div>
-                <div class="p-4 border-bottom">
-                    <h3 class="h6 text-uppercase text-secondary">Entrega e homenagem</h3>
-                    <dl class="row small mb-0 order-dl">
-                        <dt class="col-5">Homenageado(a)</dt><dd class="col-7"><?= e($selectedOrder['honoree_name']) ?></dd>
-                        <dt class="col-5">Destino</dt><dd class="col-7"><?= e($selectedOrder['city']) ?>/<?= e($selectedOrder['state']) ?></dd>
-                        <dt class="col-5">Local</dt><dd class="col-7"><?= e($selectedOrder['delivery_place']) ?></dd>
-                        <dt class="col-5">Entrega</dt><dd class="col-7"><?= $selectedOrder['delivery_date'] ? date('d/m/Y', strtotime($selectedOrder['delivery_date'])) : '—' ?><?= $selectedOrder['delivery_time'] ? ' às ' . substr((string) $selectedOrder['delivery_time'], 0, 5) : '' ?></dd>
-                    </dl>
-                    <?php if ($selectedOrder['ribbon_message']): ?><div class="mt-3 p-3 bg-light rounded-3 small"><strong>Faixa:</strong><br><?= nl2br(e($selectedOrder['ribbon_message'])) ?></div><?php endif; ?>
-                    <?php if ($selectedOrder['notes']): ?><div class="mt-3 small"><strong>Observações:</strong><br><?= nl2br(e($selectedOrder['notes'])) ?></div><?php endif; ?>
-                </div>
-                <div class="p-4 border-bottom">
-                    <h3 class="h6 text-uppercase text-secondary">Itens</h3>
-                    <div class="vstack gap-2"><?php foreach ($selectedOrderItems as $item): ?><div class="d-flex justify-content-between gap-3 small"><span><?= (int) $item['quantity'] ?>x <?= e($item['product_name']) ?></span><strong><?= money((float) $item['subtotal']) ?></strong></div><?php endforeach; ?></div>
-                    <hr>
-                    <div class="d-flex justify-content-between small mb-2"><span>Produtos</span><strong><?= money((float) $selectedOrder['products_total']) ?></strong></div>
-                    <div class="d-flex justify-content-between small mb-2"><span>Frete</span><strong><?= $selectedOrder['shipping_fee'] === null ? 'A confirmar' : money((float) $selectedOrder['shipping_fee']) ?></strong></div>
-                    <div class="d-flex justify-content-between fs-5"><strong>Total</strong><strong><?= money((float) $selectedOrder['total']) ?></strong></div>
-                </div>
-                <form method="post" class="p-4">
-                    <?= csrfField() ?>
-                    <input type="hidden" name="action" value="update_order">
-                    <input type="hidden" name="order_id" value="<?= (int) $selectedOrder['id'] ?>">
-                    <div class="mb-3"><label class="form-label fw-semibold">Frete</label><div class="input-group"><span class="input-group-text">R$</span><input type="number" name="shipping_fee" class="form-control" min="0" step="0.01" placeholder="A confirmar" value="<?= $selectedOrder['shipping_fee'] !== null ? e(number_format((float) $selectedOrder['shipping_fee'], 2, '.', '')) : '' ?>"></div></div>
-                    <div class="mb-3"><label class="form-label fw-semibold">Status</label><select name="status" class="form-select"><?php foreach (orderStatusOptions() as $value => $label): ?><option value="<?= e($value) ?>" <?= $selectedOrder['status'] === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></div>
-                    <button class="btn btn-brand w-100 rounded-3" type="submit"><i class="bi bi-arrow-repeat me-1"></i>Atualizar pedido</button>
-                </form>
+    <div class="admin-card p-0 overflow-hidden">
+        <div class="orders-list-head">
+            <div>
+                <h2 class="h5 mb-1"><?= $statusFilter !== '' ? e(orderStatusLabel($statusFilter)) : 'Todos os pedidos' ?></h2>
+                <p class="small text-secondary mb-0">
+                    <?= count($orders) ?> <?= count($orders) === 1 ? 'pedido encontrado' : 'pedidos encontrados' ?>
+                    <?= $search !== '' ? ' para “' . e($search) . '”' : '' ?>
+                </p>
             </div>
         </div>
-    <?php endif; ?>
+
+        <?php if (!$orders): ?>
+            <div class="orders-empty-state">
+                <span><i class="bi bi-receipt"></i></span>
+                <h3 class="h5 mb-2">Nenhum pedido encontrado</h3>
+                <p class="text-secondary mb-0">Ajuste os filtros ou a busca para tentar novamente.</p>
+            </div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 admin-orders-table orders-table">
+                    <thead>
+                        <tr>
+                            <th>Pedido</th>
+                            <th>Cliente</th>
+                            <th>Entrega</th>
+                            <th>Status</th>
+                            <th class="text-end">Total</th>
+                            <th class="orders-action-column"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($orders as $order): ?>
+                            <?php $isUnread = !(int) $order['is_read'] && $order['status'] === 'novo'; ?>
+                            <tr class="<?= $isUnread ? 'order-unread' : '' ?>">
+                                <td>
+                                    <a href="admin-pedido.php?id=<?= (int) $order['id'] ?>" class="order-number-link">
+                                        <?php if ($isUnread): ?><span class="order-unread-dot"></span><?php endif; ?>
+                                        #<?= (int) $order['id'] ?>
+                                    </a>
+                                    <div class="order-table-meta">
+                                        <?= date('d/m/Y', strtotime((string) $order['created_at'])) ?>
+                                        <span>·</span>
+                                        <?= date('H:i', strtotime((string) $order['created_at'])) ?>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="order-customer-name"><?= e($order['customer_name']) ?></div>
+                                    <div class="order-table-meta"><?= e($order['customer_phone']) ?></div>
+                                </td>
+
+                                <td>
+                                    <div class="order-delivery-city">
+                                        <?= e(trim((string) $order['city'])) ?: 'Destino não informado' ?>
+                                        <?= $order['state'] ? '/' . e((string) $order['state']) : '' ?>
+                                    </div>
+                                    <div class="order-table-meta">
+                                        <?php if ($order['delivery_date']): ?>
+                                            <?= date('d/m/Y', strtotime((string) $order['delivery_date'])) ?>
+                                            <?= $order['delivery_time'] ? ' · ' . substr((string) $order['delivery_time'], 0, 5) : '' ?>
+                                        <?php else: ?>
+                                            Data a confirmar
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="order-status-badge order-status-<?= e((string) $order['status']) ?>">
+                                        <?= e(orderStatusLabel((string) $order['status'])) ?>
+                                    </span>
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="order-total"><?= money((float) $order['total']) ?></div>
+                                    <div class="order-table-meta">
+                                        <?= $order['shipping_fee'] === null ? 'Frete a confirmar' : 'Frete ' . money((float) $order['shipping_fee']) ?>
+                                    </div>
+                                </td>
+
+                                <td class="text-end">
+                                    <a
+                                        href="admin-pedido.php?id=<?= (int) $order['id'] ?>"
+                                        class="btn btn-sm btn-light border orders-view-button"
+                                        aria-label="Abrir pedido #<?= (int) $order['id'] ?>"
+                                        title="Abrir pedido"
+                                    >
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
+
 <?php require __DIR__ . '/includes/admin-shell-end.php'; ?>
