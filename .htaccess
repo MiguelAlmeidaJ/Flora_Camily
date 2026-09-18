@@ -2,6 +2,22 @@ Options -Indexes
 
 <IfModule mod_rewrite.c>
 RewriteEngine On
+
+# URLs públicas sem .php.
+# Redireciona apenas navegação GET/HEAD para não interferir em POSTs e ações do painel.
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.php(?:[?\s]) [NC]
+RewriteRule ^(?:.*/)?index\.php$ / [R=301,L,NE]
+
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s/+(.+?)\.php(?:[?\s]) [NC]
+RewriteRule ^(.+)\.php$ /$1 [R=301,L,NE]
+
+# Resolve /pagina internamente para /pagina.php quando o arquivo PHP existir.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1.php -f
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 </IfModule>
 
 <FilesMatch "\.(sql|log|ini|env|bak)$">
