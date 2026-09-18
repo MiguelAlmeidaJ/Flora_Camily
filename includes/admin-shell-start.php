@@ -26,6 +26,7 @@ $adminMenu = isDev()
         ['key' => 'pedidos', 'label' => 'Pedidos', 'icon' => 'receipt', 'href' => 'admin-pedidos.php'],
         ['key' => 'produtos', 'label' => 'Produtos', 'icon' => 'flower1', 'href' => 'admin-produtos.php'],
         ['key' => 'categorias', 'label' => 'Categorias', 'icon' => 'tags', 'href' => 'admin-categorias.php'],
+        ['key' => 'regioes', 'label' => 'Regiões', 'icon' => 'geo-alt', 'href' => 'admin-regioes.php'],
         ['key' => 'notificacoes', 'label' => 'Notificações', 'icon' => 'bell', 'href' => 'admin-notificacoes.php'],
         ['key' => 'configuracoes', 'label' => 'Configurações', 'icon' => 'gear', 'href' => 'admin-configuracoes.php'],
     ];
