@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
 $pageTitle = $pageTitle ?? SITE_NAME;
-$headerCategories = crownCategories();
+$headerCategoryTree = categoryTree();
 ?>
 <!doctype html>
 <html lang="pt-BR">
@@ -21,9 +21,8 @@ $headerCategories = crownCategories();
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom py-2">
     <div class="container">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
+        <a class="navbar-brand d-flex align-items-center" href="index.php" aria-label="Flora Camily - Início">
             <img src="<?= e(siteLogo()) ?>" alt="Flora Camily" class="brand-logo">
-            <span class="brand-name d-none d-sm-inline">Flora Camily</span>
         </a>
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu" aria-controls="mainMenu" aria-expanded="false" aria-label="Abrir menu">
             <span class="navbar-toggler-icon"></span>
@@ -31,15 +30,41 @@ $headerCategories = crownCategories();
         <div class="collapse navbar-collapse" id="mainMenu">
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <li class="nav-item"><a class="nav-link" href="index.php">Início</a></li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="loja.php" role="button" data-bs-toggle="dropdown" aria-expanded="false">Coroas</a>
-                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-4 p-2">
-                        <li><a class="dropdown-item rounded-3" href="loja.php"><i class="bi bi-grid me-2"></i>Ver todas</a></li>
-                        <?php foreach ($headerCategories as $category): ?>
-                            <li><a class="dropdown-item rounded-3" href="loja.php?categoria=<?= urlencode((string) $category['slug']) ?>"><i class="bi bi-flower1 me-2"></i><?= e($category['name']) ?></a></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </li>
+                <?php foreach ($headerCategoryTree as $rootCategory): ?>
+                    <?php if (!empty($rootCategory['children'])): ?>
+                        <li class="nav-item dropdown">
+                            <a
+                                class="nav-link dropdown-toggle"
+                                href="loja.php?categoria=<?= urlencode((string) $rootCategory['slug']) ?>"
+                                role="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
+                                <?= e($rootCategory['name']) ?>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-4 p-2">
+                                <li>
+                                    <a class="dropdown-item rounded-3" href="loja.php?categoria=<?= urlencode((string) $rootCategory['slug']) ?>">
+                                        <i class="bi bi-grid me-2"></i>Ver todas em <?= e($rootCategory['name']) ?>
+                                    </a>
+                                </li>
+                                <?php foreach ($rootCategory['children'] as $category): ?>
+                                    <li>
+                                        <a class="dropdown-item rounded-3" href="loja.php?categoria=<?= urlencode((string) $category['slug']) ?>">
+                                            <i class="bi bi-flower1 me-2"></i><?= e($category['name']) ?>
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <a class="nav-link" href="loja.php?categoria=<?= urlencode((string) $rootCategory['slug']) ?>">
+                                <?= e($rootCategory['name']) ?>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                <?php endforeach; ?>
                 <li class="nav-item"><a class="nav-link" href="loja.php">Homenagens</a></li>
                 <li class="nav-item"><a class="nav-link" href="index.php#como-funciona">Como funciona</a></li>
                 <li class="nav-item ms-lg-2">
