@@ -400,7 +400,11 @@ function customerWhatsAppUrl(string $phone, int $orderId): string
 
 function sendNewOrderEmail(array $order, array $items): bool
 {
-    if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) {
+    if (
+        STORE_EMAIL === '' ||
+        !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL) ||
+        !function_exists('mail')
+    ) {
         return false;
     }
 
@@ -443,5 +447,13 @@ function sendNewOrderEmail(array $order, array $items): bool
         $headers[] = 'Reply-To: ' . FROM_EMAIL;
     }
 
-    return @mail(STORE_EMAIL, $subject, implode("\r\n", $lines), implode("\r\n", $headers));
+    try {
+        return @mail(STORE_EMAIL, $subject, implode("\r\n", $lines), implode("\r\n", $headers));
+    } catch (Throwable $e) {
+        appLog('email.order_notification_error', [
+            'order_id' => $orderId,
+            'message' => $e->getMessage(),
+        ], 'warning');
+        return false;
+    }
 }
