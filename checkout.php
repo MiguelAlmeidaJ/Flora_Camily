@@ -143,8 +143,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'products_total' => $productsTotal,
             ];
 
-            if (sendNewOrderEmail($orderForEmail, $items)) {
-                $pdo->prepare('UPDATE orders SET email_notified = 1 WHERE id = ?')->execute([$orderId]);
+            try {
+                if (sendNewOrderEmail($orderForEmail, $items)) {
+                    $pdo->prepare('UPDATE orders SET email_notified = 1 WHERE id = ?')->execute([$orderId]);
+                } else {
+                    appLog('email.order_notification_skipped', [
+                        'order_id' => $orderId,
+                        'mail_available' => function_exists('mail'),
+                        'store_email_configured' => STORE_EMAIL !== '',
+                    ], 'warning');
+                }
+            } catch (Throwable $notificationError) {
+                appLog('email.order_notification_error', [
+                    'order_id' => $orderId,
+                    'message' => $notificationError->getMessage(),
+                ], 'warning');
             }
 
             $_SESSION['cart'] = [];
