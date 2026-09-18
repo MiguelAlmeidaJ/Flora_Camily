@@ -113,16 +113,20 @@ INSERT INTO app_settings (setting_key, setting_value) VALUES
 ('site_favicon', 'assets/img/logo.svg')
 ON DUPLICATE KEY UPDATE setting_key = VALUES(setting_key);
 
-INSERT INTO categories (name, slug, active, sort_order)
-SELECT 'Coroa de Flores Simples', 'coroa-de-flores-simples', 1, 10
+INSERT INTO categories (name, slug, parent_id, active, sort_order)
+SELECT 'Coroas', 'coroas', NULL, 1, 10
+WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = 'coroas');
+
+INSERT INTO categories (name, slug, parent_id, active, sort_order)
+SELECT 'Coroa de Flores Simples', 'coroa-de-flores-simples', (SELECT id FROM categories WHERE slug = 'coroas' LIMIT 1), 1, 10
 WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = 'coroa-de-flores-simples');
 
-INSERT INTO categories (name, slug, active, sort_order)
-SELECT 'Coroa de Flores Mediana', 'coroa-de-flores-mediana', 1, 20
+INSERT INTO categories (name, slug, parent_id, active, sort_order)
+SELECT 'Coroa de Flores Mediana', 'coroa-de-flores-mediana', (SELECT id FROM categories WHERE slug = 'coroas' LIMIT 1), 1, 20
 WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = 'coroa-de-flores-mediana');
 
-INSERT INTO categories (name, slug, active, sort_order)
-SELECT 'Coroa de Flores Luxo', 'coroa-de-flores-luxo', 1, 30
+INSERT INTO categories (name, slug, parent_id, active, sort_order)
+SELECT 'Coroa de Flores Luxo', 'coroa-de-flores-luxo', (SELECT id FROM categories WHERE slug = 'coroas' LIMIT 1), 1, 30
 WHERE NOT EXISTS (SELECT 1 FROM categories WHERE slug = 'coroa-de-flores-luxo');
 
 INSERT INTO admin_users (username, password_hash, role)
@@ -132,7 +136,8 @@ WHERE NOT EXISTS (SELECT 1 FROM admin_users WHERE username = 'admin');
 INSERT IGNORE INTO migration_history (migration_name, applied_by) VALUES
 ('2026-09-17-order-flow.sql', 'bootstrap'),
 ('2026-09-17-categories-users-dev.sql', 'bootstrap'),
-('2026-09-17-admin-sidebar-settings.sql', 'bootstrap');
+('2026-09-17-admin-sidebar-settings.sql', 'bootstrap'),
+('2026-09-18-category-hierarchy.sql', 'bootstrap');
 
 INSERT INTO products (name, category, category_id, description, price, active, featured)
 SELECT 'Coroa Serenidade', 'Coroa de Flores Simples', (SELECT id FROM categories WHERE slug = 'coroa-de-flores-simples' LIMIT 1), 'Composição elegante em tons suaves para uma homenagem delicada e respeitosa.', 299.90, 1, 1
