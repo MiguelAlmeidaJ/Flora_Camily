@@ -9,13 +9,15 @@ E-commerce simples em PHP + MySQL para venda de adornos e homenagens florais, co
 - Bootstrap 5
 - Bootstrap Icons
 - Apache / hospedagem compartilhada
-- Sem Composer e sem framework, para facilitar a publicação em `public_html`
+- Composer para dependências PHP
+- PHPMailer para envio SMTP
+- Sem framework, mantendo compatibilidade com hospedagem compartilhada
 
 ## Fluxo do pedido
 
 1. O cliente escolhe os produtos e pode adicionar ao carrinho ou usar **Finalizar compra** para ir direto ao checkout.
 2. O pedido entra no painel como `Novo pedido` e aparece nas notificações.
-3. A loja recebe também uma notificação por e-mail, quando o servidor possui `mail()` habilitado e os e-mails estão configurados.
+3. A loja recebe também uma notificação por e-mail via SMTP usando PHPMailer.
 4. O vendedor analisa o pedido e pode chamar o cliente pelo WhatsApp caso seja necessário ajustar algum detalhe.
 5. Ao fechar a venda, o vendedor altera o status para `Em preparação`.
 6. Quando o pedido sair, altera para `Em entrega`.
@@ -81,11 +83,17 @@ O perfil Dev possui acesso completo ao sistema. Na tela inicial há atalhos para
 1. No painel da hospedagem, crie um banco MySQL e um usuário com acesso a esse banco.
 2. Abra o banco no phpMyAdmin e importe `database.sql`.
 3. Faça uma cópia de `config.local.example.php` com o nome `config.local.php`.
-4. Em `config.local.php`, informe banco, usuário, senha, WhatsApp e e-mails da Flora Camily.
+4. Em `config.local.php`, informe banco, WhatsApp, e-mails e credenciais SMTP da Flora Camily.
 5. Envie todo o projeto para `public_html` ou para a pasta configurada para o domínio/subdomínio.
-6. Garanta que PHP 8.1 ou superior esteja selecionado na hospedagem.
-7. A pasta `uploads` precisa permitir gravação pelo PHP. Em hospedagens comuns, `755` costuma ser suficiente.
-8. Acesse `seu-dominio.com/admin.php`.
+6. Dentro da pasta do projeto execute:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+7. Garanta que PHP 8.1 ou superior esteja selecionado na hospedagem.
+8. A pasta `uploads` precisa permitir gravação pelo PHP. Em hospedagens comuns, `755` costuma ser suficiente.
+9. Acesse `seu-dominio.com/admin.php`.
 
 `config.local.php` está no `.gitignore`, portanto as credenciais do servidor não precisam ser enviadas ao GitHub.
 
@@ -95,6 +103,7 @@ Depois de executar:
 
 ```bash
 git pull origin main
+composer install --no-dev --optimize-autoloader
 ```
 
 Aplique somente as migrations que ainda não foram executadas, nesta ordem:
@@ -119,7 +128,17 @@ Exemplo de `config.local.php`:
 return [
     'whatsapp_number' => '5532999999999',
     'store_email' => 'pedidos@seudominio.com.br',
-    'from_email' => 'naoresponda@seudominio.com.br',
+    'from_email' => 'pedidos@seudominio.com.br',
+    'smtp' => [
+        'enabled' => true,
+        'host' => 'smtp.seudominio.com.br',
+        'port' => 587,
+        'encryption' => 'tls',
+        'auth' => true,
+        'username' => 'pedidos@seudominio.com.br',
+        'password' => 'SENHA_DO_EMAIL',
+        'from_name' => 'Flora Camily',
+    ],
     'db' => [
         'host' => 'localhost',
         'name' => 'NOME_DO_BANCO',
@@ -129,7 +148,7 @@ return [
 ];
 ```
 
-`store_email` é o endereço que recebe a notificação de novo pedido. `from_email` deve preferencialmente pertencer ao próprio domínio da hospedagem.
+`store_email` é o endereço que recebe a notificação de novo pedido. `from_email` é o remetente usado pelo SMTP e deve preferencialmente ser a mesma conta autenticada. Para a maioria das hospedagens, use porta `587` com `tls`; se o provedor exigir SMTPS, normalmente será porta `465` com `ssl`.
 
 ## Primeiro acesso administrativo
 
