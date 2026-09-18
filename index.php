@@ -11,111 +11,281 @@ $stmt = db()->query(
      LIMIT 6'
 );
 $products = $stmt->fetchAll();
+
+$heroProduct = null;
+foreach ($products as $candidate) {
+    if (!empty($candidate['image']) && is_file(__DIR__ . '/' . ltrim((string) $candidate['image'], '/'))) {
+        $heroProduct = $candidate;
+        break;
+    }
+}
 ?>
-<section class="hero py-5 py-lg-6">
-    <div class="container py-4 py-lg-5">
-        <div class="row align-items-center g-5">
-            <div class="col-lg-6">
-                <span class="eyebrow"><i class="bi bi-flower1"></i> Flores que fazem histórias</span>
-                <h1 class="mt-3 mb-4">Uma homenagem feita com cuidado em cada detalhe.</h1>
-                <p class="mb-4">Escolha sua homenagem floral com tranquilidade, informe os dados da entrega e envie o pedido para nossa equipe analisar e preparar tudo com cuidado.</p>
-                <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-lg-start">
-                    <a href="loja.php" class="btn btn-brand btn-lg px-4">Ver homenagens</a>
-                    <a href="<?= e(storeWhatsAppUrl()) ?>" target="_blank" rel="noopener" class="btn btn-outline-brand btn-lg px-4"><i class="bi bi-whatsapp me-2"></i>Comprar pelo WhatsApp</a>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="hero-logo-wrap">
-                    <img src="assets/img/logo.svg" class="hero-logo" alt="Logo Flora Camily">
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
-<section class="info-strip py-4">
+<section class="home-hero">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-md-4 d-flex gap-3 align-items-center">
-                <div class="info-icon"><i class="bi bi-clipboard-check"></i></div>
-                <div><strong>Análise pela equipe</strong><div class="small opacity-75">Cada pedido é conferido antes da preparação</div></div>
-            </div>
-            <div class="col-md-4 d-flex gap-3 align-items-center">
-                <div class="info-icon"><i class="bi bi-flower2"></i></div>
-                <div><strong>Homenagens personalizadas</strong><div class="small opacity-75">Mensagem de faixa e observações</div></div>
-            </div>
-            <div class="col-md-4 d-flex gap-3 align-items-center">
-                <div class="info-icon"><i class="bi bi-truck"></i></div>
-                <div><strong>Entrega própria</strong><div class="small opacity-75">A Flora Camily cuida da entrega até o destino</div></div>
-            </div>
-        </div>
-    </div>
-</section>
+        <div class="row align-items-center g-5 g-xl-6">
+            <div class="col-lg-6">
+                <div class="home-hero-copy">
+                    <span class="eyebrow">
+                        <span class="eyebrow-dot"></span>
+                        Flores que fazem histórias
+                    </span>
 
-<section class="py-5">
-    <div class="container py-lg-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
-            <div>
-                <span class="eyebrow">Seleção especial</span>
-                <h2 class="section-title mb-2">Homenagens em destaque</h2>
-                <p class="section-subtitle mb-0">Opções preparadas para expressar carinho, respeito e presença.</p>
-            </div>
-            <a href="loja.php" class="btn btn-outline-brand align-self-start align-self-md-auto">Ver todas</a>
-        </div>
+                    <h1>Homenagens florais feitas com presença e delicadeza.</h1>
 
-        <div class="row g-4">
-            <?php foreach ($products as $product): ?>
-                <?php $fallback = empty($product['image']); ?>
-                <div class="col-md-6 col-xl-4">
-                    <article class="product-card">
-                        <a href="produto.php?id=<?= (int) $product['id'] ?>" class="text-decoration-none">
-                            <img src="<?= e(productImage($product['image'])) ?>" alt="<?= e($product['name']) ?>" class="product-image <?= $fallback ? 'logo-fallback' : '' ?>">
+                    <p class="home-hero-lead">
+                        Escolha uma homenagem com tranquilidade. Nossa equipe acompanha cada pedido,
+                        confirma os detalhes e cuida da entrega com atenção em cada etapa.
+                    </p>
+
+                    <div class="home-hero-actions">
+                        <a href="loja.php" class="btn btn-brand btn-lg px-4">
+                            Ver homenagens
+                            <i class="bi bi-arrow-right ms-2"></i>
                         </a>
-                        <div class="p-4">
-                            <div class="product-category mb-2"><?= e(productCategoryName($product)) ?></div>
-                            <h3 class="product-title mb-2"><a class="text-decoration-none" href="produto.php?id=<?= (int) $product['id'] ?>"><?= e($product['name']) ?></a></h3>
-                            <p class="text-secondary small mb-3"><?= e(excerpt((string) $product['description'], 115)) ?></p>
-                            <div class="d-flex justify-content-between align-items-center gap-3">
-                                <span class="product-price"><?= money((float) $product['price']) ?></span>
-                                <a href="produto.php?id=<?= (int) $product['id'] ?>" class="btn btn-sm btn-outline-brand">Detalhes</a>
+
+                        <a
+                            href="<?= e(storeWhatsAppUrl()) ?>"
+                            target="_blank"
+                            rel="noopener"
+                            class="btn home-whatsapp-link btn-lg px-4"
+                        >
+                            <i class="bi bi-whatsapp me-2"></i>
+                            Falar com a equipe
+                        </a>
+                    </div>
+
+                    <div class="home-hero-trust">
+                        <div>
+                            <span><i class="bi bi-flower1"></i></span>
+                            <div>
+                                <strong>Preparação cuidadosa</strong>
+                                <small>Cada pedido passa pela nossa equipe.</small>
                             </div>
                         </div>
-                    </article>
+                        <div>
+                            <span><i class="bi bi-truck"></i></span>
+                            <div>
+                                <strong>Entrega própria</strong>
+                                <small>Acompanhamento até o destino.</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            <?php endforeach; ?>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="home-hero-visual">
+                    <div class="hero-botanical hero-botanical-one"></div>
+                    <div class="hero-botanical hero-botanical-two"></div>
+
+                    <div class="hero-brand-panel">
+                        <div class="hero-brand-panel-top">
+                            <span>Flora Camily</span>
+                            <small>Homenagens florais</small>
+                        </div>
+
+                        <div class="hero-brand-mark">
+                            <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
+                        </div>
+
+                        <div class="hero-brand-panel-bottom">
+                            <span>cuidado</span>
+                            <i class="bi bi-flower1"></i>
+                            <span>presença</span>
+                            <i class="bi bi-flower1"></i>
+                            <span>respeito</span>
+                        </div>
+                    </div>
+
+                    <?php if ($heroProduct): ?>
+                        <a href="produto.php?id=<?= (int) $heroProduct['id'] ?>" class="hero-product-float">
+                            <img src="<?= e(productImage($heroProduct['image'])) ?>" alt="<?= e($heroProduct['name']) ?>">
+                            <div>
+                                <small>Em destaque</small>
+                                <strong><?= e($heroProduct['name']) ?></strong>
+                                <span><?= money((float) $heroProduct['price']) ?></span>
+                            </div>
+                            <i class="bi bi-arrow-up-right"></i>
+                        </a>
+                    <?php else: ?>
+                        <div class="hero-note-float">
+                            <span><i class="bi bi-heart"></i></span>
+                            <div>
+                                <strong>Atendimento humano</strong>
+                                <small>Você fala diretamente com nossa equipe.</small>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="hero-seal-float">
+                        <i class="bi bi-check2"></i>
+                        <span>Pedido analisado<br>antes da preparação</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<section id="como-funciona" class="soft-section py-5">
-    <div class="container py-lg-4">
-        <div class="text-center mb-5">
-            <span class="eyebrow">Simples e acolhedor</span>
-            <h2 class="section-title">Como funciona</h2>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <i class="bi bi-1-circle"></i>
-                    <h3 class="h4 mt-3">Escolha a homenagem</h3>
-                    <p class="text-secondary mb-0">Veja os produtos disponíveis e adicione ao carrinho ou finalize a compra diretamente.</p>
+<section class="home-assurance">
+    <div class="container">
+        <div class="home-assurance-grid">
+            <div class="home-assurance-item">
+                <span class="home-assurance-icon"><i class="bi bi-clipboard-check"></i></span>
+                <div>
+                    <strong>Análise pela equipe</strong>
+                    <small>Conferimos os detalhes antes da preparação.</small>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <i class="bi bi-2-circle"></i>
-                    <h3 class="h4 mt-3">Informe os detalhes</h3>
-                    <p class="text-secondary mb-0">Preencha local, data, horário, mensagem da faixa e observações.</p>
+
+            <div class="home-assurance-item">
+                <span class="home-assurance-icon"><i class="bi bi-chat-heart"></i></span>
+                <div>
+                    <strong>Homenagem personalizada</strong>
+                    <small>Mensagem de faixa e observações do cliente.</small>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="feature-card">
-                    <i class="bi bi-3-circle"></i>
-                    <h3 class="h4 mt-3">Envie seu pedido</h3>
-                    <p class="text-secondary mb-0">A equipe analisa a solicitação, confirma o frete e entra em contato apenas se algum ajuste for necessário.</p>
+
+            <div class="home-assurance-item">
+                <span class="home-assurance-icon"><i class="bi bi-truck"></i></span>
+                <div>
+                    <strong>Entrega acompanhada</strong>
+                    <small>Cuidado da confirmação até o destino final.</small>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<section class="home-products-section">
+    <div class="container">
+        <div class="home-section-head">
+            <div>
+                <span class="eyebrow">
+                    <span class="eyebrow-dot"></span>
+                    Seleção especial
+                </span>
+                <h2>Homenagens em destaque</h2>
+                <p>Opções preparadas para expressar carinho, respeito e presença.</p>
+            </div>
+
+            <a href="loja.php" class="home-section-link">
+                Ver todas
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <?php if (!$products): ?>
+            <div class="home-empty-products">
+                <i class="bi bi-flower1"></i>
+                <h3>Novas homenagens em breve</h3>
+                <p>Estamos preparando nosso catálogo.</p>
+            </div>
+        <?php else: ?>
+            <div class="row g-4">
+                <?php foreach ($products as $product): ?>
+                    <?php $fallback = empty($product['image']); ?>
+                    <div class="col-md-6 col-xl-4">
+                        <article class="home-product-card">
+                            <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-media">
+                                <?php if ($fallback): ?>
+                                    <div class="home-product-placeholder">
+                                        <span class="placeholder-orbit orbit-one"></span>
+                                        <span class="placeholder-orbit orbit-two"></span>
+                                        <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
+                                    </div>
+                                <?php else: ?>
+                                    <img
+                                        src="<?= e(productImage($product['image'])) ?>"
+                                        alt="<?= e($product['name']) ?>"
+                                        class="home-product-image"
+                                    >
+                                <?php endif; ?>
+
+                                <span class="home-product-category">
+                                    <?= e(productCategoryName($product)) ?>
+                                </span>
+
+                                <span class="home-product-open">
+                                    <i class="bi bi-arrow-up-right"></i>
+                                </span>
+                            </a>
+
+                            <div class="home-product-body">
+                                <div>
+                                    <h3>
+                                        <a href="produto.php?id=<?= (int) $product['id'] ?>">
+                                            <?= e($product['name']) ?>
+                                        </a>
+                                    </h3>
+
+                                    <p><?= e(excerpt((string) $product['description'], 105)) ?></p>
+                                </div>
+
+                                <div class="home-product-footer">
+                                    <div>
+                                        <small>A partir de</small>
+                                        <strong><?= money((float) $product['price']) ?></strong>
+                                    </div>
+
+                                    <a
+                                        href="produto.php?id=<?= (int) $product['id'] ?>"
+                                        class="home-product-button"
+                                    >
+                                        Ver detalhes
+                                        <i class="bi bi-arrow-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<section id="como-funciona" class="home-how-section">
+    <div class="container">
+        <div class="home-how-head text-center">
+            <span class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                Simples e acolhedor
+            </span>
+            <h2>Como funciona</h2>
+            <p>Um processo direto para que você possa cuidar da homenagem com tranquilidade.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="home-step-card">
+                    <span class="home-step-number">01</span>
+                    <div class="home-step-icon"><i class="bi bi-flower1"></i></div>
+                    <h3>Escolha a homenagem</h3>
+                    <p>Veja as opções disponíveis e escolha a composição mais adequada para o momento.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="home-step-card">
+                    <span class="home-step-number">02</span>
+                    <div class="home-step-icon"><i class="bi bi-card-text"></i></div>
+                    <h3>Informe os detalhes</h3>
+                    <p>Preencha local, data, horário, mensagem da faixa e qualquer observação importante.</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="home-step-card">
+                    <span class="home-step-number">03</span>
+                    <div class="home-step-icon"><i class="bi bi-check2-circle"></i></div>
+                    <h3>Nós cuidamos do restante</h3>
+                    <p>A equipe analisa o pedido, confirma o frete e acompanha a preparação até a entrega.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <?php require __DIR__ . '/includes/footer.php'; ?>
