@@ -6,15 +6,44 @@ if (!$items) {
     redirect('carrinho.php');
 }
 
-$states = [
-    'AC' => 'Acre', 'AL' => 'Alagoas', 'AP' => 'Amapá', 'AM' => 'Amazonas', 'BA' => 'Bahia',
-    'CE' => 'Ceará', 'DF' => 'Distrito Federal', 'ES' => 'Espírito Santo', 'GO' => 'Goiás',
-    'MA' => 'Maranhão', 'MT' => 'Mato Grosso', 'MS' => 'Mato Grosso do Sul', 'MG' => 'Minas Gerais',
-    'PA' => 'Pará', 'PB' => 'Paraíba', 'PR' => 'Paraná', 'PE' => 'Pernambuco', 'PI' => 'Piauí',
-    'RJ' => 'Rio de Janeiro', 'RN' => 'Rio Grande do Norte', 'RS' => 'Rio Grande do Sul',
-    'RO' => 'Rondônia', 'RR' => 'Roraima', 'SC' => 'Santa Catarina', 'SP' => 'São Paulo',
-    'SE' => 'Sergipe', 'TO' => 'Tocantins',
-];
+$states = [];
+$serviceCities = [];
+
+try {
+    $stateRows = db()->query(
+        'SELECT id, name, uf
+         FROM service_states
+         WHERE active = 1
+         ORDER BY sort_order ASC, name ASC'
+    )->fetchAll();
+
+    foreach ($stateRows as $stateRow) {
+        $states[(string) $stateRow['uf']] = [
+            'id' => (int) $stateRow['id'],
+            'name' => (string) $stateRow['name'],
+        ];
+    }
+
+    $cityRows = db()->query(
+        'SELECT c.id, c.state_id, c.name, s.uf
+         FROM service_cities c
+         INNER JOIN service_states s ON s.id = c.state_id
+         WHERE c.active = 1
+           AND s.active = 1
+         ORDER BY s.sort_order ASC, c.sort_order ASC, c.name ASC'
+    )->fetchAll();
+
+    foreach ($cityRows as $cityRow) {
+        $serviceCities[] = [
+            'id' => (int) $cityRow['id'],
+            'state_id' => (int) $cityRow['state_id'],
+            'state_uf' => (string) $cityRow['uf'],
+            'name' => (string) $cityRow['name'],
+        ];
+    }
+} catch (Throwable $e) {
+    appLog('checkout.regions_unavailable', ['message' => $e->getMessage()], 'error');
+}
 
 $ribbonSuggestions = [
     'Com carinho e saudade, de seus familiares e amigos.',
@@ -30,7 +59,7 @@ $data = [
     'customer_phone' => '',
     'customer_email' => '',
     'honoree_name' => '',
-    'state' => 'MG',
+    'state' => isset($states['MG']) ? 'MG' : (array_key_first($states) ?: ''),
     'city' => '',
     'delivery_place' => '',
     'delivery_date' => '',
@@ -60,10 +89,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Informe o nome da pessoa homenageada.';
     }
     if (!isset($states[$data['state']])) {
-        $errors[] = 'Selecione um estado válido.';
+        $errors[] = 'Selecione um estado atendido pela Flora Camily.';
     }
-    if ($data['city'] === '') {
-        $errors[] = 'Informe a cidade da entrega.';
+
+    $selectedCity = null;
+    if ($data['city'] !== '' && isset($states[$data['state']])) {
+        foreach ($serviceCities as $serviceCity) {
+            if (
+                $serviceCity['state_uf'] === $data['state'] &&
+                $serviceCity['name'] === $data['city']
+            ) {
+                $selectedCity = $serviceCity;
+                break;
+            }
+        }
+    }
+
+    if (!$selectedCity) {
+        $errors[] = 'Selecione uma cidade atendida pela Flora Camily.';
     }
     if ($data['delivery_place'] === '') {
         $errors[] = 'Informe o local da entrega.';
@@ -239,17 +282,45 @@ require __DIR__ . '/includes/header.php';
                                 <input type="text" name="honoree_name" class="form-control" maxlength="160" required value="<?= e($data['honoree_name']) ?>" placeholder="Nome completo">
                             </div>
 
+                            <div class="col-12">
+                                <div class="checkout-service-region-note">
+                                    <i class="bi bi-geo-alt"></i>
+                                    <div>
+                                        <strong>Área de atendimento</strong>
+                                        <span>Selecione uma das regiões atendidas pela Flora Camily.</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Estado <span class="text-danger">*</span></label>
-                                <select name="state" class="form-select" required>
-                                    <?php foreach ($states as $uf => $stateName): ?>
-                                        <option value="<?= e($uf) ?>" <?= $data['state'] === $uf ? 'selected' : '' ?>><?= e($stateName) ?></option>
-                                    <?php endforeach; ?>
+                                <select name="state" id="checkoutState" class="form-select" required <?= !$states ? 'disabled' : '' ?>>
+                                    <?php if (!$states): ?>
+                                        <option value="">Nenhum estado disponível</option>
+                                    <?php else: ?>
+                                        <?php foreach ($states as $uf => $state): ?>
+                                            <option value="<?= e($uf) ?>" <?= $data['state'] === $uf ? 'selected' : '' ?>>
+                                                <?= e($state['name']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 </select>
                             </div>
+
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Cidade <span class="text-danger">*</span></label>
-                                <input type="text" name="city" class="form-control" maxlength="120" required value="<?= e($data['city']) ?>" placeholder="Cidade da entrega">
+                                <select name="city" id="checkoutCity" class="form-select" required <?= !$serviceCities ? 'disabled' : '' ?>>
+                                    <option value="">Selecione a cidade...</option>
+                                    <?php foreach ($serviceCities as $city): ?>
+                                        <option
+                                            value="<?= e($city['name']) ?>"
+                                            data-state="<?= e($city['state_uf']) ?>"
+                                            <?= $data['city'] === $city['name'] ? 'selected' : '' ?>
+                                        >
+                                            <?= e($city['name']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div class="col-12">
@@ -350,10 +421,42 @@ require __DIR__ . '/includes/header.php';
 (function () {
     const field = document.getElementById('ribbonMessage');
     const count = document.getElementById('ribbonCount');
-    if (!field || !count) return;
-    const update = () => count.textContent = field.value.length;
-    field.addEventListener('input', update);
-    update();
+
+    if (field && count) {
+        const update = () => count.textContent = field.value.length;
+        field.addEventListener('input', update);
+        update();
+    }
+
+    const stateSelect = document.getElementById('checkoutState');
+    const citySelect = document.getElementById('checkoutCity');
+
+    if (!stateSelect || !citySelect) return;
+
+    const cityOptions = Array.from(citySelect.querySelectorAll('option[data-state]'));
+
+    const updateCities = () => {
+        const currentState = stateSelect.value;
+        const currentCity = citySelect.value;
+        let currentStillVisible = false;
+
+        cityOptions.forEach((option) => {
+            const visible = option.dataset.state === currentState;
+            option.hidden = !visible;
+            option.disabled = !visible;
+
+            if (visible && option.value === currentCity) {
+                currentStillVisible = true;
+            }
+        });
+
+        if (!currentStillVisible) {
+            citySelect.value = '';
+        }
+    };
+
+    stateSelect.addEventListener('change', updateCities);
+    updateCities();
 })();
 </script>
 <?php require __DIR__ . '/includes/footer.php'; ?>
