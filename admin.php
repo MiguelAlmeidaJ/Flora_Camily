@@ -49,35 +49,112 @@ if (!adminLoggedIn()):
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/admin-panel.css">
 </head>
 <body class="admin-login-page">
-<div class="container py-5">
-    <div class="row justify-content-center min-vh-100 align-items-center py-4">
-        <div class="col-md-7 col-lg-5 col-xl-4">
-            <div class="admin-login-card">
-                <div class="text-center mb-4">
-                    <img src="<?= e(siteLogo()) ?>" alt="Flora Camily" class="admin-login-logo mb-3">
-                    <h1 class="h3 mb-1">Acessar painel</h1>
-                    <p class="text-secondary small mb-0">Gestão da Flora Camily</p>
+    <main class="admin-login-shell">
+        <section class="admin-login-wrap">
+            <div class="admin-login-brand-panel">
+                <div class="admin-login-brand-top">
+                    <img src="<?= e(siteLogo()) ?>" alt="Flora Camily" class="admin-login-brand-logo">
+                    <span>Painel administrativo</span>
                 </div>
-                <?php if ($loginError): ?><div class="alert alert-danger rounded-3"><?= e($loginError) ?></div><?php endif; ?>
-                <form method="post">
-                    <?= csrfField() ?>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Usuário</label>
-                        <div class="input-group"><span class="input-group-text"><i class="bi bi-person"></i></span><input type="text" name="username" class="form-control" autocomplete="username" required autofocus></div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Senha</label>
-                        <div class="input-group"><span class="input-group-text"><i class="bi bi-lock"></i></span><input type="password" name="password" class="form-control" autocomplete="current-password" required></div>
-                    </div>
-                    <button class="btn btn-brand w-100 py-3 rounded-3" type="submit">Entrar</button>
-                </form>
-                <div class="text-center mt-4"><a href="index.php" class="small text-secondary text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Voltar para o site</a></div>
+
+                <div class="admin-login-brand-copy">
+                    <span class="admin-login-eyebrow">Flora Camily</span>
+                    <h1>Gestão simples para cuidar de cada pedido.</h1>
+                    <p>Produtos, pedidos, entregas e atendimento reunidos em um único lugar.</p>
+                </div>
+
+                <div class="admin-login-brand-foot">
+                    <span><i class="bi bi-shield-check"></i> Acesso seguro</span>
+                    <span><i class="bi bi-flower1"></i> Gestão da loja</span>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
+
+            <div class="admin-login-form-panel">
+                <div class="admin-login-form-inner">
+                    <div class="admin-login-heading">
+                        <span class="admin-login-mobile-logo">
+                            <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
+                        </span>
+                        <span class="admin-login-kicker">Bem-vindo de volta</span>
+                        <h2>Acessar painel</h2>
+                        <p>Entre com seu usuário e senha para continuar.</p>
+                    </div>
+
+                    <?php if ($loginError): ?>
+                        <div class="alert alert-danger admin-login-alert">
+                            <i class="bi bi-exclamation-circle me-2"></i><?= e($loginError) ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <form method="post" class="admin-login-form">
+                        <?= csrfField() ?>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="loginUsername">Usuário</label>
+                            <div class="admin-login-field">
+                                <i class="bi bi-person"></i>
+                                <input
+                                    id="loginUsername"
+                                    type="text"
+                                    name="username"
+                                    class="form-control"
+                                    autocomplete="username"
+                                    required
+                                    autofocus
+                                    placeholder="Digite seu usuário"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="loginPassword">Senha</label>
+                            <div class="admin-login-field">
+                                <i class="bi bi-lock"></i>
+                                <input
+                                    id="loginPassword"
+                                    type="password"
+                                    name="password"
+                                    class="form-control"
+                                    autocomplete="current-password"
+                                    required
+                                    placeholder="Digite sua senha"
+                                >
+                                <button type="button" class="admin-login-password-toggle" data-password-toggle aria-label="Mostrar senha">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="btn admin-login-submit w-100" type="submit">
+                            Entrar
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="admin-login-back">
+                        <a href="index.php">
+                            <i class="bi bi-arrow-left"></i>
+                            Voltar para o site
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.querySelector('[data-password-toggle]')?.addEventListener('click', function () {
+            const input = document.getElementById('loginPassword');
+            const icon = this.querySelector('i');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+            this.setAttribute('aria-label', show ? 'Ocultar senha' : 'Mostrar senha');
+        });
+    </script>
 </body>
 </html>
 <?php
