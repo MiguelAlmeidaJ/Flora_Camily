@@ -150,6 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (isDev() && $action === 'test_email') {
             if (STORE_EMAIL === '' || !filter_var(STORE_EMAIL, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Configure store_email no config.local.php antes de testar.');
+            if (!function_exists('mail')) throw new RuntimeException('A função mail() não está disponível neste servidor. Configure SMTP para o envio de e-mails.');
             $headers = ['MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8'];
             if (FROM_EMAIL !== '' && filter_var(FROM_EMAIL, FILTER_VALIDATE_EMAIL)) $headers[] = 'From: Flora Camily <' . FROM_EMAIL . '>';
             $sent = @mail(STORE_EMAIL, 'Teste de e-mail - Flora Camily', 'Se você recebeu esta mensagem, o envio de e-mail do servidor está funcionando.', implode("\r\n", $headers));
