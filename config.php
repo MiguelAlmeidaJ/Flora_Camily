@@ -354,12 +354,13 @@ function productCategoryOptions(bool $onlyActive = true): array
     if (!categoriesHaveHierarchy()) {
         return array_map(static function (array $category): array {
             $category['parent_name'] = null;
+            $category['has_children'] = false;
             return $category;
         }, $categories);
     }
 
-    $hasChildren = [];
     $byId = [];
+    $hasChildren = [];
 
     foreach ($categories as $category) {
         $id = (int) $category['id'];
@@ -373,25 +374,28 @@ function productCategoryOptions(bool $onlyActive = true): array
     $options = [];
     foreach ($categories as $category) {
         $id = (int) $category['id'];
-
-        if (isset($hasChildren[$id])) {
-            continue;
-        }
-
         $parentName = null;
+
         if ($category['parent_id'] !== null) {
             $parent = $byId[(int) $category['parent_id']] ?? null;
             $parentName = $parent['name'] ?? null;
         }
 
         $category['parent_name'] = $parentName;
+        $category['has_children'] = isset($hasChildren[$id]);
         $options[] = $category;
     }
 
     usort($options, static function (array $a, array $b): int {
-        $parentCompare = strcmp((string) ($a['parent_name'] ?? ''), (string) ($b['parent_name'] ?? ''));
-        if ($parentCompare !== 0) {
-            return $parentCompare;
+        $aRoot = $a['parent_id'] === null ? (int) $a['id'] : (int) $a['parent_id'];
+        $bRoot = $b['parent_id'] === null ? (int) $b['id'] : (int) $b['parent_id'];
+
+        if ($aRoot !== $bRoot) {
+            return $aRoot <=> $bRoot;
+        }
+
+        if (($a['parent_id'] === null) !== ($b['parent_id'] === null)) {
+            return $a['parent_id'] === null ? -1 : 1;
         }
 
         return ((int) $a['sort_order'] <=> (int) $b['sort_order'])
