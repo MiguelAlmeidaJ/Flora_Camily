@@ -299,7 +299,16 @@ require __DIR__ . '/includes/admin-shell-start.php';
                             <i class="bi bi-grip-vertical"></i>
                         </button>
 
-                        <div class="category-tree-icon"><i class="bi bi-folder2-open"></i></div>
+                        <button
+                            type="button"
+                            class="category-tree-icon category-collapse-toggle"
+                            data-category-toggle="<?= $rootId ?>"
+                            aria-expanded="false"
+                            aria-controls="subcategory-<?= $rootId ?>"
+                            title="Mostrar subcategorias"
+                        >
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
 
                         <div class="category-tree-main">
                             <div class="d-flex flex-wrap align-items-center gap-2">
@@ -349,7 +358,11 @@ require __DIR__ . '/includes/admin-shell-start.php';
                         </div>
                     </div>
 
-                    <div class="subcategory-list <?= !$children ? 'is-empty' : '' ?>" data-parent-id="<?= $rootId ?>">
+                    <div
+                        class="subcategory-list <?= !$children ? 'is-empty' : '' ?> is-collapsed"
+                        id="subcategory-<?= $rootId ?>"
+                        data-parent-id="<?= $rootId ?>"
+                    >
                         <?php foreach ($children as $category): ?>
                             <?php
                                 $categoryId = (int) $category['id'];
@@ -564,6 +577,30 @@ require __DIR__ . '/includes/admin-shell-start.php';
             }
         });
     }
+
+    document.querySelectorAll('[data-category-toggle]').forEach((button) => {
+        const rootId = button.dataset.categoryToggle;
+        const target = document.getElementById('subcategory-' + rootId);
+        if (!target) return;
+
+        const storageKey = 'flora-category-expanded-' + rootId;
+        const shouldOpen = window.localStorage.getItem(storageKey) === '1';
+
+        const applyState = (open) => {
+            target.classList.toggle('is-collapsed', !open);
+            button.classList.toggle('is-expanded', open);
+            button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            button.setAttribute('title', open ? 'Recolher subcategorias' : 'Mostrar subcategorias');
+        };
+
+        applyState(shouldOpen);
+
+        button.addEventListener('click', () => {
+            const open = button.getAttribute('aria-expanded') !== 'true';
+            applyState(open);
+            window.localStorage.setItem(storageKey, open ? '1' : '0');
+        });
+    });
 
     function showToast(message, error = false) {
         if (!toast) return;
