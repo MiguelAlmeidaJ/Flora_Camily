@@ -74,6 +74,75 @@ function streamDatabaseBackup(): never
     exit;
 }
 
+function resetDatabaseForProduction(): array
+{
+    $pdo = db();
+
+    $productImages = [];
+    try {
+        $productImages = $pdo->query(
+            "SELECT image FROM products WHERE image IS NOT NULL AND image <> ''"
+        )->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Throwable $e) {
+        $productImages = [];
+    }
+
+    $tablesToClear = [
+        'order_items',
+        'orders',
+        'products',
+        'service_cities',
+        'service_states',
+        'app_logs',
+    ];
+
+    $existingTables = array_map(
+        'strval',
+        $pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN)
+    );
+
+    $cleared = [];
+    $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+
+    try {
+        foreach ($tablesToClear as $table) {
+            if (!in_array($table, $existingTables, true)) continue;
+            $safeTable = str_replace('`', '``', $table);
+            $pdo->exec('DELETE FROM `' . $safeTable . '`');
+            $cleared[] = $table;
+        }
+
+        foreach ($cleared as $table) {
+            $safeTable = str_replace('`', '``', $table);
+            try {
+                $pdo->exec('ALTER TABLE `' . $safeTable . '` AUTO_INCREMENT = 1');
+            } catch (Throwable $e) {
+                // Algumas tabelas podem não possuir AUTO_INCREMENT.
+            }
+        }
+    } finally {
+        $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+    }
+
+    $removedImages = 0;
+    foreach ($productImages as $image) {
+        $image = (string) $image;
+        if (
+            preg_match('#^uploads/produto_[A-Za-z0-9._-]+$#', $image) === 1 &&
+            is_file(__DIR__ . '/' . $image) &&
+            @unlink(__DIR__ . '/' . $image)
+        ) {
+            $removedImages++;
+        }
+    }
+
+    unset($_SESSION['cart']);
+
+    return [
+        'tables' => $cleared,
+        'images_removed' => $removedImages,
+    ];
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
     $action = (string) ($_POST['action'] ?? '');
@@ -146,6 +215,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isDev() && $action === 'backup_database') {
             appLog('system.database_backup');
             streamDatabaseBackup();
+        }
+        if (isDev() && $action === 'reset_database_production') {
+            $confirmation = strtoupper(trim((string) ($_POST['confirmation'] ?? '')));
+
+            if ($confirmation !== 'PRODUCAO') {
+                throw new RuntimeException('Digite PRODUCAO para confirmar a limpeza do banco.');
+            }
+
+            $result = resetDatabaseForProduction();
+
+            appLog('system.production_reset', [
+                'tables_cleared' => $result['tables'],
+                'product_images_removed' => $result['images_removed'],
+                'preserved' => ['admin_users', 'categories', 'app_settings', 'migration_history'],
+            ], 'warning');
+
+            $_SESSION['admin_flash'] = 'Banco preparado para produção. Usuários, categorias e metadados técnicos foram preservados.';
+            redirect('admin-configuracoes#sistema');
         }
 
         if (isDev() && $action === 'test_email') {
@@ -244,7 +331,107 @@ require __DIR__ . '/includes/admin-shell-start.php';
         <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-envelope-check"></i></span><div><strong>SMTP</strong><small><?php if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)): ?>PHPMailer não instalado<?php elseif (!smtpConfigured()): ?>Configuração pendente<?php else: ?><?= e(SMTP_HOST) ?>:<?= SMTP_PORT ?> · <?= strtoupper(e(SMTP_ENCRYPTION ?: 'sem criptografia')) ?><?php endif; ?></small></div><form method="post" class="mt-auto w-100"><?= csrfField() ?><input type="hidden" name="action" value="test_email"><button class="btn btn-light border btn-sm w-100" type="submit"><i class="bi bi-send me-1"></i>Testar SMTP</button></form></div></div>
         <div class="col-md-6 col-xl-3"><div class="admin-system-tool"><span><i class="bi bi-server"></i></span><div><strong>Ambiente</strong><small>PHP <?= e(PHP_VERSION) ?><br><?= e((string) ($_SERVER['SERVER_SOFTWARE'] ?? 'Servidor')) ?></small></div><a href="admin-logs.php" class="btn btn-light border btn-sm w-100 mt-auto">Ver logs</a></div></div>
     </div>
+
+    <div class="admin-production-reset mt-4">
+        <div class="admin-production-reset-copy">
+            <span class="admin-production-reset-icon"><i class="bi bi-database-x"></i></span>
+            <div>
+                <span class="admin-production-reset-kicker">Zona de risco</span>
+                <strong>Preparar banco para produção</strong>
+                <p>Remove pedidos, produtos, regiões e logs. Usuários, categorias, configurações do sistema e histórico de migrations são preservados.</p>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-outline-danger admin-production-reset-button" data-bs-toggle="modal" data-bs-target="#productionResetModal">
+            <i class="bi bi-exclamation-triangle me-1"></i>Resetar para produção
+        </button>
+    </div>
 </div>
+
+<div class="modal fade" id="productionResetModal" tabindex="-1" aria-labelledby="productionResetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-modal-content admin-production-reset-modal">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <span class="admin-production-reset-kicker">Ação irreversível</span>
+                    <h2 class="modal-title h4 mt-2" id="productionResetModalLabel">Resetar banco para produção</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+
+            <form method="post" id="productionResetForm">
+                <div class="modal-body pt-3">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="action" value="reset_database_production">
+
+                    <div class="production-reset-warning">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <div>
+                            <strong>Os dados removidos não poderão ser recuperados por esta tela.</strong>
+                            <span>Faça um backup antes se houver qualquer dado que precise ser mantido.</span>
+                        </div>
+                    </div>
+
+                    <div class="production-reset-columns">
+                        <div class="production-reset-preserve">
+                            <span>Será mantido</span>
+                            <strong><i class="bi bi-check2"></i> Usuários</strong>
+                            <strong><i class="bi bi-check2"></i> Categorias</strong>
+                            <strong><i class="bi bi-check2"></i> Configurações técnicas</strong>
+                            <strong><i class="bi bi-check2"></i> Histórico de migrations</strong>
+                        </div>
+                        <div class="production-reset-remove">
+                            <span>Será apagado</span>
+                            <strong>Pedidos e itens</strong>
+                            <strong>Produtos e imagens</strong>
+                            <strong>Estados e cidades</strong>
+                            <strong>Logs do sistema</strong>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label for="productionResetConfirmation" class="form-label fw-semibold">Digite <code>PRODUCAO</code> para confirmar</label>
+                        <input type="text" name="confirmation" id="productionResetConfirmation" class="form-control" autocomplete="off" required placeholder="PRODUCAO">
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" id="productionResetSubmit" disabled>
+                        <i class="bi bi-database-x me-1"></i>Apagar dados e preparar produção
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const input = document.getElementById('productionResetConfirmation');
+    const submit = document.getElementById('productionResetSubmit');
+    const form = document.getElementById('productionResetForm');
+
+    if (!input || !submit || !form) return;
+
+    const updateState = () => {
+        submit.disabled = input.value.trim().toUpperCase() !== 'PRODUCAO';
+    };
+
+    input.addEventListener('input', updateState);
+
+    form.addEventListener('submit', (event) => {
+        if (input.value.trim().toUpperCase() !== 'PRODUCAO') {
+            event.preventDefault();
+            return;
+        }
+
+        if (!window.confirm('Confirmar reset definitivo do banco para produção?')) {
+            event.preventDefault();
+        }
+    });
+})();
+</script>
 
 <div class="admin-card p-4" id="migrations">
     <div class="d-flex justify-content-between align-items-center gap-3 mb-3"><div><span class="eyebrow">Banco de dados</span><h2 class="h4 mt-2 mb-1">Migrations</h2><p class="small text-secondary mb-0">Execute somente migrations pendentes e mantenha backup antes de alterações estruturais.</p></div><span class="badge text-bg-dark rounded-pill"><?= count($migrations) ?> arquivos</span></div>
