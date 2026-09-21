@@ -110,12 +110,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $categoryName = 'Homenagens florais';
 
         if ($categoryId > 0) {
-            $stmt = db()->prepare('SELECT name FROM categories WHERE id = ? LIMIT 1');
+            $stmt = db()->prepare(
+                'SELECT c.name
+                 FROM categories c
+                 LEFT JOIN categories parent ON parent.id = c.parent_id
+                 WHERE c.id = ?
+                   AND c.active = 1
+                   AND (c.parent_id IS NULL OR parent.active = 1)
+                 LIMIT 1'
+            );
             $stmt->execute([$categoryId]);
             $categoryNameFound = $stmt->fetchColumn();
 
             if ($categoryNameFound === false) {
-                throw new RuntimeException('A categoria selecionada não existe mais.');
+                throw new RuntimeException('Selecione uma categoria ativa.');
             }
 
             $categoryName = (string) $categoryNameFound;
@@ -199,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$categories = productCategoryOptions(false);
+$categories = productCategoryOptions(true);
 $isEditing = !empty($product['id']);
 
 $adminPage = 'produtos';
@@ -281,7 +289,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
                                     value="<?= (int) $category['id'] ?>"
                                     <?= (int) ($product['category_id'] ?? 0) === (int) $category['id'] ? 'selected' : '' ?>
                                 >
-                                    <?= !empty($category['parent_name']) ? e($category['parent_name']) . ' → ' : '' ?><?= e($category['name']) ?><?= !(int) $category['active'] ? ' (oculta)' : '' ?>
+                                    <?= !empty($category['parent_name']) ? e($category['parent_name']) . ' → ' : '' ?><?= e($category['name']) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
