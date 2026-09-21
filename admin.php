@@ -57,7 +57,6 @@ if (!adminLoggedIn()):
             <div class="admin-login-brand-panel">
                 <div class="admin-login-brand-top">
                     <img src="<?= e(siteLogo()) ?>" alt="Flora Camily" class="admin-login-brand-logo">
-                    <span>Painel administrativo</span>
                 </div>
 
                 <div class="admin-login-brand-copy">
@@ -66,10 +65,7 @@ if (!adminLoggedIn()):
                     <p>Produtos, pedidos, entregas e atendimento reunidos em um único lugar.</p>
                 </div>
 
-                <div class="admin-login-brand-foot">
-                    <span><i class="bi bi-shield-check"></i> Acesso seguro</span>
-                    <span><i class="bi bi-flower1"></i> Gestão da loja</span>
-                </div>
+
             </div>
 
             <div class="admin-login-form-panel">
@@ -256,7 +252,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
                         <td><?= e($order['city']) ?>/<?= e($order['state']) ?><div class="small text-secondary"><?= $order['delivery_date'] ? date('d/m/Y', strtotime($order['delivery_date'])) : '—' ?></div></td>
                         <td><span class="badge <?= e(orderStatusClass((string) $order['status'])) ?>"><?= e(orderStatusLabel((string) $order['status'])) ?></span></td>
                         <td class="text-nowrap"><?= money((float) $order['total']) ?></td>
-                        <td class="text-end"><a href="admin-pedidos.php?order=<?= (int) $order['id'] ?>" class="btn btn-sm btn-light border">Ver</a></td>
+                        <td class="text-end"><a href="admin-pedido?id=<?= (int) $order['id'] ?>" class="btn btn-sm btn-light border">Ver</a></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
