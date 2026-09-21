@@ -2401,3 +2401,40 @@
         flex-direction: column;
     }
 }
+
+
+/* Login simplificado */
+.admin-login-brand-logo {
+    width: 68px;
+    height: 54px;
+}
+.admin-login-brand-top {
+    justify-content: flex-start;
+}
+.admin-login-brand-copy {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+/* Categorias principais recolhíveis */
+.category-collapse-toggle {
+    border: 0;
+    cursor: pointer;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.category-collapse-toggle:hover {
+    background: #e5e9df;
+    color: var(--flora-olive-dark);
+}
+.category-collapse-toggle i {
+    transition: transform .18s ease;
+}
+.category-collapse-toggle.is-expanded i {
+    transform: rotate(180deg);
+}
+.subcategory-list.is-collapsed {
+    display: none;
+}
+.category-root-block:has(.category-collapse-toggle.is-expanded) .category-root-row {
+    background: #f8f9f6;
+}
