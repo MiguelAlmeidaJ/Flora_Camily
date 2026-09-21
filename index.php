@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Flora Camily | Homenagens florais com delicadeza';
+$pageTitle = 'Flora Camily | Flores que fazem histórias';
 require __DIR__ . '/includes/header.php';
 
 $stmt = db()->query(
@@ -31,16 +31,16 @@ foreach ($products as $candidate) {
                         Flores que fazem histórias
                     </span>
 
-                    <h1>Homenagens florais feitas com presença e delicadeza.</h1>
+                    <h1>Flores preparadas com cuidado para momentos que pedem presença.</h1>
 
                     <p class="home-hero-lead">
-                        Escolha uma homenagem com tranquilidade. Nossa equipe acompanha cada pedido,
-                        confirma os detalhes e cuida da entrega com atenção em cada etapa.
+                        Escolha com tranquilidade. Nossa equipe acompanha cada pedido,
+                        confirma os detalhes e cuida da preparação e da entrega em cada etapa.
                     </p>
 
                     <div class="home-hero-actions">
                         <a href="loja.php" class="btn btn-brand btn-lg px-4">
-                            Ver homenagens
+                            Ver catálogo
                             <i class="bi bi-arrow-right ms-2"></i>
                         </a>
 
@@ -82,7 +82,7 @@ foreach ($products as $candidate) {
                     <div class="hero-brand-panel">
                         <div class="hero-brand-panel-top">
                             <span>Flora Camily</span>
-                            <small>Homenagens florais</small>
+                            <small>Flores com significado</small>
                         </div>
 
                         <div class="hero-brand-mark">
