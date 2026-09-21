@@ -428,7 +428,7 @@ require __DIR__ . '/includes/admin-shell-start.php';
                                 <?php foreach ($cities as $city): ?>
                                     <?php
                                         $cityVisible = (int) $city['active'] === 1 && (int) $city['state_active'] === 1;
-                                        $citySearch = mb_strtolower((string) $city['name'] . ' ' . $city['state_name'] . ' ' . $city['state_uf']);
+                                        $citySearch = (string) $city['name'] . ' ' . $city['state_name'] . ' ' . $city['state_uf'];
                                     ?>
                                     <tr
                                         data-region-city-row
