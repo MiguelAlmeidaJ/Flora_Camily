@@ -3,6 +3,15 @@ Options -Indexes
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# Endpoints técnicos amigáveis para buscadores.
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^robots\.txt$ robots.php [L]
+
+# Evita a duplicidade /index e /.
+RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$
+RewriteCond %{THE_REQUEST} \s/+index(?:[?\s]) [NC]
+RewriteRule ^index/?$ / [R=301,L,NE]
+
 # URLs públicas sem .php.
 # Redireciona apenas navegação GET/HEAD para não interferir em POSTs e ações do painel.
 RewriteCond %{REQUEST_METHOD} ^(?:GET|HEAD)$

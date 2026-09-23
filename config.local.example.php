@@ -1,6 +1,8 @@
 <?php
 
 return [
+    // URL pública do site, usada por canonical, sitemap e dados estruturados.
+    'site_url' => 'https://www.seudominio.com.br',
     'whatsapp_number' => '5532999999999',
     'store_email' => 'pedidos@seudominio.com.br',
     'from_email' => 'pedidos@seudominio.com.br',

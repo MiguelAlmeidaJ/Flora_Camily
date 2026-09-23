@@ -17,6 +17,7 @@ const SITE_NAME = 'Flora Camily';
 const SITE_TAGLINE = 'Flores que fazem histórias';
 
 $settings = [
+    'site_url' => '',
     'whatsapp_number' => '5532999999999',
     'store_email' => '',
     'from_email' => '',
@@ -46,6 +47,7 @@ if (is_file($localConfigFile)) {
     }
 }
 
+define('SITE_URL', trim((string) ($settings['site_url'] ?? '')));
 define('WHATSAPP_NUMBER', (string) preg_replace('/\D+/', '', (string) $settings['whatsapp_number']));
 define('STORE_EMAIL', trim((string) $settings['store_email']));
 define('FROM_EMAIL', trim((string) $settings['from_email']));
@@ -91,6 +93,85 @@ function db(): PDO
 function e(?string $value): string
 {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+
+function siteBaseUrl(): string
+{
+    static $baseUrl = null;
+
+    if (is_string($baseUrl)) {
+        return $baseUrl;
+    }
+
+    $configured = trim(SITE_URL);
+    if ($configured !== '') {
+        if (!preg_match('~^https?://~i', $configured)) {
+            $configured = 'https://' . $configured;
+        }
+
+        $parts = parse_url($configured);
+        if (is_array($parts) && !empty($parts['host'])) {
+            $scheme = strtolower((string) ($parts['scheme'] ?? 'https')) === 'http' ? 'http' : 'https';
+            $host = (string) $parts['host'];
+            $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+            $path = trim((string) ($parts['path'] ?? ''), '/');
+
+            $baseUrl = rtrim(
+                $scheme . '://' . $host . $port . ($path !== '' ? '/' . $path : ''),
+                '/'
+            );
+            return $baseUrl;
+        }
+    }
+
+    $forwardedProtoParts = explode(',', (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    $forwardedProto = strtolower(trim((string) ($forwardedProtoParts[0] ?? '')));
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+        || $forwardedProto === 'https'
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+    );
+
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+    if ($host === '' || !preg_match('/^[a-z0-9.\-:\[\]]+$/i', $host)) {
+        $host = 'localhost';
+    }
+
+    $baseUrl = ($isHttps ? 'https' : 'http') . '://' . $host;
+    return $baseUrl;
+}
+
+function absoluteUrl(string $path = ''): string
+{
+    if ($path !== '' && preg_match('~^https?://~i', $path)) {
+        return $path;
+    }
+
+    if ($path === '') {
+        return siteBaseUrl();
+    }
+
+    return siteBaseUrl() . '/' . ltrim($path, '/');
+}
+
+function canonicalUrlFromRequest(): string
+{
+    $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $path = parse_url($requestUri, PHP_URL_PATH);
+    $path = is_string($path) && $path !== '' ? $path : '/';
+
+    if ($path === '/index.php' || $path === '/index') {
+        $path = '/';
+    } elseif (str_ends_with($path, '.php')) {
+        $path = substr($path, 0, -4);
+    }
+
+    if ($path !== '/') {
+        $path = rtrim($path, '/');
+    }
+
+    return absoluteUrl($path);
 }
 
 function money(float $value): string
