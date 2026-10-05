@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/config.php';
+
 $pageTitle = 'Disk Coroas | Coroa de Flores com Entrega | Flora Camily';
 $pageDescription = 'Disk coroas da Flora Camily: escolha sua coroa de flores, personalize a mensagem da faixa e fale direto com nossa equipe pelo WhatsApp para organizar a homenagem e a entrega.';
 $canonicalUrl = absoluteUrl('/disk-coroas');
@@ -34,10 +36,6 @@ $structuredData = [
         ],
         'url' => absoluteUrl('/disk-coroas'),
         'description' => 'Atendimento para escolha, personalização e organização da entrega de coroas de flores e homenagens florais.',
-        'areaServed' => [
-            '@type' => 'Country',
-            'name' => 'Brasil',
-        ],
     ],
     [
         '@context' => 'https://schema.org',
