@@ -25,6 +25,12 @@ function sitemapDate(?string $value): ?string
 $entries = [
     ['loc' => absoluteUrl('/')],
     ['loc' => absoluteUrl('/loja')],
+    [
+        'loc' => absoluteUrl('/disk-coroas'),
+        'lastmod' => is_file(__DIR__ . '/disk-coroas.php')
+            ? date('Y-m-d', (int) filemtime(__DIR__ . '/disk-coroas.php'))
+            : null,
+    ],
 ];
 
 try {
