@@ -293,24 +293,18 @@ function siteFavicon(): string
 
 function siteHeroImage(): string
 {
-    $path = trim(appSetting('hero_image', ''));
+    $default = 'assets/img/hero-coroas-composicao.webp';
+    $path = trim(appSetting('hero_image', $default));
 
     if ($path !== '' && is_file(__DIR__ . '/' . ltrim($path, '/'))) {
         return $path;
+    }
+
+    if (is_file(__DIR__ . '/' . $default)) {
+        return $default;
     }
 
     return siteLogo();
-}
-
-function siteHeroSecondaryImage(): string
-{
-    $path = trim(appSetting('hero_image_secondary', ''));
-
-    if ($path !== '' && is_file(__DIR__ . '/' . ltrim($path, '/'))) {
-        return $path;
-    }
-
-    return siteHeroImage();
 }
 
 function cart(): array
