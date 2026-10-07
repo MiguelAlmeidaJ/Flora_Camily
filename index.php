@@ -81,21 +81,11 @@ foreach ($products as $candidate) {
                     <div class="hero-crowns-ring hero-crowns-ring-two"></div>
 
                     <div class="hero-crowns-showcase" aria-label="Coroas florais Flora Camily">
-                        <div class="hero-crown-stage hero-crown-stage-main">
-                            <img
-                                src="<?= e(siteHeroImage()) ?>"
-                                alt="Coroa floral principal Flora Camily"
-                                class="hero-crown hero-crown-main"
-                            >
-                        </div>
-
-                        <div class="hero-crown-stage hero-crown-stage-secondary">
-                            <img
-                                src="<?= e(siteHeroSecondaryImage()) ?>"
-                                alt="Segunda coroa floral Flora Camily"
-                                class="hero-crown hero-crown-secondary"
-                            >
-                        </div>
+                        <img
+                            src="assets/img/hero-coroas-composicao.webp"
+                            alt="Composição de coroas florais Flora Camily"
+                            class="hero-crowns-composition"
+                        >
                     </div>
 
                     <?php if ($heroProduct): ?>
