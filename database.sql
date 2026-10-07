@@ -137,7 +137,8 @@ CREATE TABLE IF NOT EXISTS migration_history (
 INSERT INTO app_settings (setting_key, setting_value) VALUES
 ('site_logo', 'assets/img/logo.svg'),
 ('site_favicon', 'assets/img/logo.svg'),
-('hero_image', '')
+('hero_image', ''),
+('hero_image_secondary', '')
 ON DUPLICATE KEY UPDATE setting_key = VALUES(setting_key);
 
 INSERT INTO categories (name, slug, parent_id, active, sort_order)
