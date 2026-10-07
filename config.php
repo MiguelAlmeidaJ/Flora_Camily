@@ -179,6 +179,12 @@ function money(float $value): string
     return 'R$ ' . number_format($value, 2, ',', '.');
 }
 
+function installmentText(float $value, int $installments = 6): string
+{
+    $installments = max(1, $installments);
+    return 'em até ' . $installments . 'x de ' . money($value / $installments);
+}
+
 function excerpt(?string $text, int $limit = 115): string
 {
     $text = trim((string) $text);
