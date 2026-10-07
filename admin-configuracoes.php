@@ -151,19 +151,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'save_branding') {
             $logo = uploadSystemAsset('site_logo', 'logo');
             $favicon = uploadSystemAsset('site_favicon', 'favicon');
+            $heroImage = uploadSystemAsset('hero_image', 'hero');
             if ($logo !== null) setAppSetting('site_logo', $logo);
             if ($favicon !== null) setAppSetting('site_favicon', $favicon);
-            if ($logo === null && $favicon === null) throw new RuntimeException('Selecione uma nova logo ou favicon.');
-            appLog('settings.branding', ['logo_changed' => $logo !== null, 'favicon_changed' => $favicon !== null]);
-            $_SESSION['admin_flash'] = 'Identidade do site atualizada.';
+            if ($heroImage !== null) setAppSetting('hero_image', $heroImage);
+            if ($logo === null && $favicon === null && $heroImage === null) {
+                throw new RuntimeException('Selecione uma nova logo, favicon ou imagem do hero.');
+            }
+            appLog('settings.branding', [
+                'logo_changed' => $logo !== null,
+                'favicon_changed' => $favicon !== null,
+                'hero_changed' => $heroImage !== null,
+            ]);
+            $_SESSION['admin_flash'] = 'Aparência do site atualizada.';
             redirect('admin-configuracoes.php');
         }
 
         if ($action === 'reset_branding') {
             setAppSetting('site_logo', 'assets/img/logo.svg');
             setAppSetting('site_favicon', 'assets/img/logo.svg');
+            setAppSetting('hero_image', '');
             appLog('settings.branding_reset');
-            $_SESSION['admin_flash'] = 'Logo e favicon restaurados para o padrão.';
+            $_SESSION['admin_flash'] = 'Logo, favicon e imagem do hero restaurados para o padrão.';
             redirect('admin-configuracoes.php');
         }
 
@@ -296,14 +305,16 @@ require __DIR__ . '/includes/admin-shell-start.php';
             <h2 class="h4 mt-2 mb-1">Logo e favicon</h2>
             <p class="small text-secondary mb-4">Altere a identidade exibida no site e no painel sem editar arquivos manualmente.</p>
             <div class="row g-4 align-items-center mb-4">
-                <div class="col-sm-6"><div class="admin-brand-preview"><small>Logo atual</small><img src="<?= e(siteLogo()) ?>" alt="Logo atual"></div></div>
-                <div class="col-sm-6"><div class="admin-brand-preview"><small>Favicon atual</small><img src="<?= e(siteFavicon()) ?>" alt="Favicon atual" class="favicon-preview"></div></div>
+                <div class="col-sm-4"><div class="admin-brand-preview"><small>Logo atual</small><img src="<?= e(siteLogo()) ?>" alt="Logo atual"></div></div>
+                <div class="col-sm-4"><div class="admin-brand-preview"><small>Favicon atual</small><img src="<?= e(siteFavicon()) ?>" alt="Favicon atual" class="favicon-preview"></div></div>
+                <div class="col-sm-4"><div class="admin-brand-preview"><small>Imagem atual do hero</small><img src="<?= e(siteHeroImage()) ?>" alt="Imagem atual do hero"></div></div>
             </div>
             <form method="post" enctype="multipart/form-data" class="row g-3">
                 <?= csrfField() ?><input type="hidden" name="action" value="save_branding">
-                <div class="col-md-6"><label class="form-label fw-semibold">Nova logo</label><input type="file" name="site_logo" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPG, PNG ou WEBP.</div></div>
-                <div class="col-md-6"><label class="form-label fw-semibold">Novo favicon</label><input type="file" name="site_favicon" class="form-control" accept="image/png,image/x-icon,image/webp"><div class="form-text">PNG, WEBP ou ICO.</div></div>
-                <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-brand" type="submit"><i class="bi bi-cloud-arrow-up me-1"></i>Salvar identidade</button></form><form method="post" onsubmit="return confirm('Restaurar logo e favicon padrão?');"><?= csrfField() ?><input type="hidden" name="action" value="reset_branding"><button class="btn btn-light border" type="submit">Restaurar padrão</button></form></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Nova logo</label><input type="file" name="site_logo" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">JPG, PNG ou WEBP.</div></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Novo favicon</label><input type="file" name="site_favicon" class="form-control" accept="image/png,image/x-icon,image/webp"><div class="form-text">PNG, WEBP ou ICO.</div></div>
+                <div class="col-md-4"><label class="form-label fw-semibold">Imagem do hero</label><input type="file" name="hero_image" class="form-control" accept="image/jpeg,image/png,image/webp"><div class="form-text">Imagem exibida no destaque da página inicial.</div></div>
+                <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-brand" type="submit"><i class="bi bi-cloud-arrow-up me-1"></i>Salvar aparência</button></form><form method="post" onsubmit="return confirm('Restaurar logo, favicon e hero padrão?');"><?= csrfField() ?><input type="hidden" name="action" value="reset_branding"><button class="btn btn-light border" type="submit">Restaurar padrão</button></form></div>
         </div>
     </div>
     <div class="col-xl-5" id="seguranca">
