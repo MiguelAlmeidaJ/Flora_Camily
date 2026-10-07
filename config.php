@@ -179,10 +179,16 @@ function money(float $value): string
     return 'R$ ' . number_format($value, 2, ',', '.');
 }
 
-function installmentText(float $value, int $installments = 6): string
+function productInstallmentText(array $product): string
 {
-    $installments = max(1, $installments);
-    return 'em até ' . $installments . 'x de ' . money($value / $installments);
+    $count = (int) ($product['installment_count'] ?? 0);
+    $value = (float) ($product['installment_value'] ?? 0);
+
+    if ($count <= 0 || $value <= 0) {
+        return '';
+    }
+
+    return 'em até ' . $count . 'x de ' . money($value);
 }
 
 function excerpt(?string $text, int $limit = 115): string
@@ -283,6 +289,17 @@ function siteFavicon(): string
 {
     $path = appSetting('site_favicon', 'assets/img/logo.svg');
     return is_file(__DIR__ . '/' . ltrim($path, '/')) ? $path : 'assets/img/logo.svg';
+}
+
+function siteHeroImage(): string
+{
+    $path = trim(appSetting('hero_image', ''));
+
+    if ($path !== '' && is_file(__DIR__ . '/' . ltrim($path, '/'))) {
+        return $path;
+    }
+
+    return siteLogo();
 }
 
 function cart(): array
