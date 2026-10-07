@@ -167,7 +167,9 @@ $heroDescription = $selectedCategory
                                 <div class="catalog-product-price">
                                     <small>A partir de</small>
                                     <strong><?= money((float) $product['price']) ?></strong>
-                                    <span class="product-installments"><?= e(installmentText((float) $product['price'])) ?></span>
+                                    <?php if (productInstallmentText($product) !== ''): ?>
+                                        <span class="product-installments"><?= e(productInstallmentText($product)) ?></span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <a href="produto.php?id=<?= (int) $product['id'] ?>" class="catalog-product-cta">
