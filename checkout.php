@@ -207,8 +207,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     appLog('email.order_notification_skipped', [
                         'order_id' => $orderId,
-                        'mail_available' => function_exists('mail'),
-                        'store_email_configured' => STORE_EMAIL !== '',
+                        'store_email' => STORE_EMAIL,
+                        'phpmailer_loaded' => class_exists(\PHPMailer\PHPMailer\PHPMailer::class),
+                        'smtp_configured' => smtpConfigured(),
+                        'smtp_enabled' => SMTP_ENABLED,
+                        'smtp_host' => SMTP_HOST,
+                        'smtp_port' => SMTP_PORT,
+                        'smtp_encryption' => SMTP_ENCRYPTION,
+                        'smtp_username' => SMTP_USERNAME,
                     ], 'warning');
                 }
             } catch (Throwable $notificationError) {
