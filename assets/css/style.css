@@ -2847,3 +2847,175 @@ a { color: inherit; }
         border-radius: 20px;
     }
 }
+
+
+/* Hero com duas coroas em destaque */
+.hero-crowns-layout {
+    min-height: 590px;
+    overflow: visible;
+}
+.hero-crowns-glow {
+    position: absolute;
+    inset: 8% 0 4% 2%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.90) 0 32%, rgba(244,226,212,.52) 55%, transparent 74%);
+    filter: blur(2px);
+    pointer-events: none;
+}
+.hero-crowns-ring {
+    position: absolute;
+    border: 1px solid rgba(180,139,86,.26);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.hero-crowns-ring-one {
+    width: 480px;
+    height: 480px;
+    right: 2%;
+    top: 4%;
+}
+.hero-crowns-ring-two {
+    width: 330px;
+    height: 330px;
+    right: -7%;
+    bottom: 1%;
+    border-color: rgba(216,161,141,.22);
+}
+.hero-crowns-showcase {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    height: 560px;
+}
+.hero-crown-stage {
+    position: absolute;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.hero-crown-stage-main {
+    z-index: 3;
+    left: 1%;
+    bottom: 0;
+    width: 72%;
+    height: 94%;
+}
+.hero-crown-stage-secondary {
+    z-index: 2;
+    right: -2%;
+    bottom: 4%;
+    width: 46%;
+    height: 72%;
+}
+.hero-crown {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    filter: drop-shadow(0 28px 30px rgba(74,58,41,.16));
+}
+.hero-crown-main {
+    transform: translateY(2%) rotate(-1deg);
+}
+.hero-crown-secondary {
+    transform: translate(2%, 4%) rotate(2deg);
+    filter: drop-shadow(0 24px 26px rgba(74,58,41,.13));
+}
+.hero-crowns-layout .hero-product-float {
+    left: -1%;
+    bottom: 3%;
+    z-index: 7;
+}
+.hero-crowns-layout .hero-seal-float {
+    right: -1%;
+    top: 10%;
+    z-index: 7;
+}
+
+@media (max-width: 1199.98px) {
+    .hero-crowns-layout {
+        min-height: 540px;
+    }
+    .hero-crowns-showcase {
+        height: 515px;
+    }
+    .hero-crown-stage-main {
+        width: 70%;
+    }
+    .hero-crown-stage-secondary {
+        width: 44%;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .hero-crowns-layout {
+        min-height: 520px;
+        margin-top: 1rem;
+    }
+    .hero-crowns-showcase {
+        height: 500px;
+        max-width: 620px;
+        margin-inline: auto;
+    }
+    .hero-crown-stage-main {
+        left: 4%;
+        width: 66%;
+    }
+    .hero-crown-stage-secondary {
+        right: 3%;
+        width: 42%;
+    }
+    .hero-crowns-layout .hero-product-float {
+        left: 5%;
+    }
+    .hero-crowns-layout .hero-seal-float {
+        right: 5%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hero-crowns-layout {
+        min-height: 430px;
+        width: 100%;
+    }
+    .hero-crowns-showcase {
+        height: 405px;
+    }
+    .hero-crowns-glow {
+        inset: 10% -12% 5%;
+    }
+    .hero-crowns-ring-one {
+        width: 340px;
+        height: 340px;
+        right: -5%;
+        top: 7%;
+    }
+    .hero-crowns-ring-two {
+        width: 230px;
+        height: 230px;
+        right: -15%;
+    }
+    .hero-crown-stage-main {
+        left: -1%;
+        bottom: 3%;
+        width: 73%;
+        height: 88%;
+    }
+    .hero-crown-stage-secondary {
+        right: -2%;
+        bottom: 7%;
+        width: 45%;
+        height: 66%;
+    }
+    .hero-crowns-layout .hero-product-float {
+        left: 1%;
+        bottom: -1%;
+        width: min(285px, 82%);
+    }
+    .hero-crowns-layout .hero-seal-float {
+        right: 0;
+        top: 5%;
+        max-width: 150px;
+    }
+}
