@@ -60,7 +60,9 @@ $fallback = empty($product['image']);
                 <div class="product-detail-price">
                     <small>A partir de</small>
                     <strong><?= money((float) $product['price']) ?></strong>
-                    <span class="product-installments product-installments-detail"><?= e(installmentText((float) $product['price'])) ?></span>
+                    <?php if (productInstallmentText($product) !== ''): ?>
+                        <span class="product-installments product-installments-detail"><?= e(productInstallmentText($product)) ?></span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="product-detail-info-grid">
