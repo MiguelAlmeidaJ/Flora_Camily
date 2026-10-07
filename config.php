@@ -705,11 +705,35 @@ function smtpConfigured(): bool
 
 function sendAppEmail(string $to, string $subject, string $body, bool $isHtml = false): bool
 {
-    if (
-        !filter_var($to, FILTER_VALIDATE_EMAIL) ||
-        !smtpConfigured() ||
-        !class_exists(\PHPMailer\PHPMailer\PHPMailer::class)
-    ) {
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        appLog('email.preflight_error', [
+            'reason' => 'invalid_recipient',
+            'to' => $to,
+        ], 'warning');
+        return false;
+    }
+
+    if (!smtpConfigured()) {
+        appLog('email.preflight_error', [
+            'reason' => 'smtp_not_configured',
+            'smtp_enabled' => SMTP_ENABLED,
+            'host' => SMTP_HOST,
+            'port' => SMTP_PORT,
+            'encryption' => SMTP_ENCRYPTION,
+            'auth' => SMTP_AUTH,
+            'username_configured' => SMTP_USERNAME !== '',
+            'password_configured' => SMTP_PASSWORD !== '',
+            'from_email' => FROM_EMAIL,
+        ], 'warning');
+        return false;
+    }
+
+    if (!class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
+        appLog('email.preflight_error', [
+            'reason' => 'phpmailer_not_installed',
+            'autoload_path' => __DIR__ . '/vendor/autoload.php',
+            'autoload_exists' => is_file(__DIR__ . '/vendor/autoload.php'),
+        ], 'error');
         return false;
     }
 
