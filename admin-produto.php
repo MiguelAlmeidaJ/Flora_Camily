@@ -94,6 +94,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $price = (float) $priceInput;
 
+        $installmentCount = max(0, (int) ($_POST['installment_count'] ?? 0));
+        $installmentValueInput = trim((string) ($_POST['installment_value'] ?? '0'));
+        if (str_contains($installmentValueInput, ',')) {
+            $installmentValueInput = str_replace('.', '', $installmentValueInput);
+            $installmentValueInput = str_replace(',', '.', $installmentValueInput);
+        }
+        $installmentValue = (float) $installmentValueInput;
+
         $categoryId = (int) ($_POST['category_id'] ?? 0);
         $active = isset($_POST['active']) ? 1 : 0;
         $featured = isset($_POST['featured']) ? 1 : 0;
@@ -105,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($price < 0) {
             throw new RuntimeException('Informe um preço válido.');
+        }
+
+        if (($installmentCount > 0 && $installmentValue <= 0) || ($installmentCount === 0 && $installmentValue > 0)) {
+            throw new RuntimeException('Preencha a quantidade de parcelas e o valor da parcela juntos.');
         }
 
         $categoryName = 'Homenagens florais';
@@ -148,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id > 0) {
             db()->prepare(
                 'UPDATE products
-                 SET name = ?, category = ?, category_id = ?, description = ?, price = ?, image = ?, active = ?, featured = ?
+                 SET name = ?, category = ?, category_id = ?, description = ?, price = ?, installment_count = ?, installment_value = ?, image = ?, active = ?, featured = ?
                  WHERE id = ?'
             )->execute([
                 $name,
@@ -156,6 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $categoryId ?: null,
                 $description,
                 $price,
+                $installmentCount ?: null,
+                $installmentValue > 0 ? $installmentValue : null,
                 $image,
                 $active,
                 $featured,
@@ -166,14 +180,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['admin_flash'] = 'Produto atualizado com sucesso.';
         } else {
             db()->prepare(
-                'INSERT INTO products (name, category, category_id, description, price, image, active, featured)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO products (name, category, category_id, description, price, installment_count, installment_value, image, active, featured)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             )->execute([
                 $name,
                 $categoryName,
                 $categoryId ?: null,
                 $description,
                 $price,
+                $installmentCount ?: null,
+                $installmentValue > 0 ? $installmentValue : null,
                 $image,
                 $active,
                 $featured,
@@ -200,6 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'category_id' => (int) ($_POST['category_id'] ?? 0),
             'description' => $_POST['description'] ?? '',
             'price' => $_POST['price'] ?? '',
+            'installment_count' => $_POST['installment_count'] ?? '',
+            'installment_value' => $_POST['installment_value'] ?? '',
             'image' => $product['image'] ?? null,
             'active' => isset($_POST['active']) ? 1 : 0,
             'featured' => isset($_POST['featured']) ? 1 : 0,
@@ -313,6 +331,40 @@ require __DIR__ . '/includes/admin-shell-start.php';
                                 placeholder="0,00"
                             >
                         </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="installmentCount" class="form-label fw-semibold">Quantidade de vezes</label>
+                        <input
+                            type="number"
+                            name="installment_count"
+                            id="installmentCount"
+                            class="form-control"
+                            min="1"
+                            max="99"
+                            step="1"
+                            value="<?= e(!empty($product['installment_count']) ? (string) (int) $product['installment_count'] : '') ?>"
+                            placeholder="Ex.: 6"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="installmentValue" class="form-label fw-semibold">Valor da parcela</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input
+                                type="number"
+                                name="installment_value"
+                                id="installmentValue"
+                                class="form-control"
+                                min="0.01"
+                                step="0.01"
+                                inputmode="decimal"
+                                value="<?= e(!empty($product['installment_value']) ? number_format((float) $product['installment_value'], 2, '.', '') : '') ?>"
+                                placeholder="0,00"
+                            >
+                        </div>
+                        <div class="form-text">Ex.: 6 vezes de R$ 35,00, independentemente do preço principal.</div>
                     </div>
 
                     <div class="col-12">
