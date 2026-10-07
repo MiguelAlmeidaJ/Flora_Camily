@@ -82,7 +82,7 @@ foreach ($products as $candidate) {
 
                     <div class="hero-crowns-showcase" aria-label="Coroas florais Flora Camily">
                         <img
-                            src="assets/img/hero-coroas-composicao.webp"
+                            src="<?= e(siteHeroImage()) ?>"
                             alt="Composição de coroas florais Flora Camily"
                             class="hero-crowns-composition"
                         >
