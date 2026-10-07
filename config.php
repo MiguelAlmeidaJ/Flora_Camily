@@ -302,6 +302,17 @@ function siteHeroImage(): string
     return siteLogo();
 }
 
+function siteHeroSecondaryImage(): string
+{
+    $path = trim(appSetting('hero_image_secondary', ''));
+
+    if ($path !== '' && is_file(__DIR__ . '/' . ltrim($path, '/'))) {
+        return $path;
+    }
+
+    return siteHeroImage();
+}
+
 function cart(): array
 {
     return $_SESSION['cart'] ?? [];
