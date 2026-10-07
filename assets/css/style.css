@@ -3019,3 +3019,94 @@ a { color: inherit; }
         max-width: 150px;
     }
 }
+
+
+/* Hero com composição única de coroas */
+.hero-crowns-layout {
+    min-height: 580px;
+}
+.hero-crowns-showcase {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    height: 555px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.hero-crowns-composition {
+    display: block;
+    width: 112%;
+    max-width: none;
+    height: auto;
+    object-fit: contain;
+    object-position: center bottom;
+    transform: translateY(1%);
+    filter: drop-shadow(0 28px 34px rgba(74,58,41,.14));
+}
+.hero-crowns-layout .hero-product-float {
+    left: -1%;
+    bottom: 3%;
+    z-index: 7;
+}
+.hero-crowns-layout .hero-seal-float {
+    right: 0;
+    top: 9%;
+    z-index: 7;
+}
+
+@media (max-width: 1199.98px) {
+    .hero-crowns-layout {
+        min-height: 540px;
+    }
+    .hero-crowns-showcase {
+        height: 515px;
+    }
+    .hero-crowns-composition {
+        width: 108%;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .hero-crowns-layout {
+        min-height: 500px;
+        margin-top: 1rem;
+    }
+    .hero-crowns-showcase {
+        height: 475px;
+        max-width: 620px;
+        margin-inline: auto;
+    }
+    .hero-crowns-composition {
+        width: 104%;
+    }
+    .hero-crowns-layout .hero-product-float {
+        left: 4%;
+    }
+    .hero-crowns-layout .hero-seal-float {
+        right: 4%;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hero-crowns-layout {
+        min-height: 395px;
+    }
+    .hero-crowns-showcase {
+        height: 375px;
+    }
+    .hero-crowns-composition {
+        width: 112%;
+        transform: translateY(2%);
+    }
+    .hero-crowns-layout .hero-product-float {
+        left: 0;
+        bottom: -2%;
+        width: min(285px, 82%);
+    }
+    .hero-crowns-layout .hero-seal-float {
+        right: 0;
+        top: 4%;
+        max-width: 150px;
+    }
+}
