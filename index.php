@@ -75,30 +75,26 @@ foreach ($products as $candidate) {
             </div>
 
             <div class="col-lg-6">
-                <div class="home-hero-visual">
-                    <div class="hero-botanical hero-botanical-one"></div>
-                    <div class="hero-botanical hero-botanical-two"></div>
+                <div class="home-hero-visual hero-crowns-layout">
+                    <div class="hero-crowns-glow"></div>
+                    <div class="hero-crowns-ring hero-crowns-ring-one"></div>
+                    <div class="hero-crowns-ring hero-crowns-ring-two"></div>
 
-                    <div class="hero-brand-panel">
-                        <div class="hero-brand-panel-top">
-                            <span>Flora Camily</span>
-                            <small>Flores com significado</small>
-                        </div>
-
-                        <div class="hero-brand-mark">
+                    <div class="hero-crowns-showcase" aria-label="Coroas florais Flora Camily">
+                        <div class="hero-crown-stage hero-crown-stage-main">
                             <img
                                 src="<?= e(siteHeroImage()) ?>"
-                                alt="Coroa de flores Flora Camily"
-                                class="hero-crown-image"
+                                alt="Coroa floral principal Flora Camily"
+                                class="hero-crown hero-crown-main"
                             >
                         </div>
 
-                        <div class="hero-brand-panel-bottom">
-                            <span>cuidado</span>
-                            <i class="bi bi-flower1"></i>
-                            <span>presença</span>
-                            <i class="bi bi-flower1"></i>
-                            <span>respeito</span>
+                        <div class="hero-crown-stage hero-crown-stage-secondary">
+                            <img
+                                src="<?= e(siteHeroSecondaryImage()) ?>"
+                                alt="Segunda coroa floral Flora Camily"
+                                class="hero-crown hero-crown-secondary"
+                            >
                         </div>
                     </div>
 
