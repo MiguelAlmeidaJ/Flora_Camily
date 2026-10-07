@@ -86,7 +86,11 @@ foreach ($products as $candidate) {
                         </div>
 
                         <div class="hero-brand-mark">
-                            <img src="<?= e(siteLogo()) ?>" alt="Flora Camily">
+                            <img
+                                src="assets/img/coroa-hero.webp"
+                                alt="Coroa de flores Flora Camily"
+                                class="hero-crown-image"
+                            >
                         </div>
 
                         <div class="hero-brand-panel-bottom">
@@ -105,6 +109,7 @@ foreach ($products as $candidate) {
                                 <small>Em destaque</small>
                                 <strong><?= e($heroProduct['name']) ?></strong>
                                 <span><?= money((float) $heroProduct['price']) ?></span>
+                                <small class="product-installments"><?= e(installmentText((float) $heroProduct['price'])) ?></small>
                             </div>
                             <i class="bi bi-arrow-up-right"></i>
                         </a>
@@ -239,6 +244,7 @@ foreach ($products as $candidate) {
                                         <div class="home-product-price-block">
                                             <small>A partir de</small>
                                             <strong><?= money((float) $product['price']) ?></strong>
+                                            <span class="product-installments"><?= e(installmentText((float) $product['price'])) ?></span>
                                         </div>
 
                                         <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-shop-button">
