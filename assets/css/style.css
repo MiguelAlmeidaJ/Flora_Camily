@@ -357,7 +357,7 @@ a { color: inherit; }
 .home-hero {
     position: relative;
     overflow: hidden;
-    padding: clamp(4.25rem, 8vw, 7.5rem) 0 clamp(3.5rem, 7vw, 6.5rem);
+    padding: clamp(2.1rem, 4vw, 3.6rem) 0 clamp(1.8rem, 3.5vw, 3rem);
     background:
         radial-gradient(circle at 82% 20%, rgba(216,161,141,.20), transparent 28%),
         radial-gradient(circle at 13% 88%, rgba(180,139,86,.10), transparent 24%),
@@ -3108,5 +3108,21 @@ a { color: inherit; }
         right: 0;
         top: 4%;
         max-width: 150px;
+    }
+}
+
+
+/* Ajuste de respiro vertical do hero */
+@media (max-width: 991.98px) {
+    .home-hero {
+        padding-top: 2rem;
+        padding-bottom: 1.75rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .home-hero {
+        padding-top: 1.5rem;
+        padding-bottom: 1.35rem;
     }
 }
