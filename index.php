@@ -87,7 +87,7 @@ foreach ($products as $candidate) {
 
                         <div class="hero-brand-mark">
                             <img
-                                src="assets/img/coroa-hero.webp"
+                                src="<?= e(siteHeroImage()) ?>"
                                 alt="Coroa de flores Flora Camily"
                                 class="hero-crown-image"
                             >
@@ -109,7 +109,9 @@ foreach ($products as $candidate) {
                                 <small>Em destaque</small>
                                 <strong><?= e($heroProduct['name']) ?></strong>
                                 <span><?= money((float) $heroProduct['price']) ?></span>
-                                <small class="product-installments"><?= e(installmentText((float) $heroProduct['price'])) ?></small>
+                                <?php if (productInstallmentText($heroProduct) !== ''): ?>
+                                    <small class="product-installments"><?= e(productInstallmentText($heroProduct)) ?></small>
+                                <?php endif; ?>
                             </div>
                             <i class="bi bi-arrow-up-right"></i>
                         </a>
@@ -244,7 +246,9 @@ foreach ($products as $candidate) {
                                         <div class="home-product-price-block">
                                             <small>A partir de</small>
                                             <strong><?= money((float) $product['price']) ?></strong>
-                                            <span class="product-installments"><?= e(installmentText((float) $product['price'])) ?></span>
+                                            <?php if (productInstallmentText($product) !== ''): ?>
+                                                <span class="product-installments"><?= e(productInstallmentText($product)) ?></span>
+                                            <?php endif; ?>
                                         </div>
 
                                         <a href="produto.php?id=<?= (int) $product['id'] ?>" class="home-product-shop-button">
