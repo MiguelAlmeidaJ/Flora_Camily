@@ -2795,3 +2795,51 @@ a { color: inherit; }
         line-height: 1;
     }
 }
+
+
+/* Hero com coroa floral */
+.hero-brand-mark::before {
+    display: none;
+}
+.hero-brand-mark .hero-crown-image {
+    position: relative;
+    z-index: 2;
+    width: min(430px, 88%);
+    aspect-ratio: 1 / 1;
+    max-height: none;
+    object-fit: cover;
+    object-position: center 45%;
+    border-radius: 24px;
+    filter: none;
+    box-shadow: 0 18px 45px rgba(74,58,41,.12);
+}
+
+/* Parcelamento dos produtos */
+.product-installments {
+    display: block;
+    margin-top: .2rem;
+    color: #8f8882;
+    font-size: .68rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+.hero-product-float .product-installments {
+    margin-top: .1rem;
+    color: #8f8882;
+    font-size: .58rem;
+}
+.catalog-product-price .product-installments {
+    margin-top: .25rem;
+}
+.product-installments-detail {
+    margin-top: .35rem;
+    color: #756d66;
+    font-size: .82rem;
+}
+
+@media (max-width: 767.98px) {
+    .hero-brand-mark .hero-crown-image {
+        width: min(390px, 92%);
+        border-radius: 20px;
+    }
+}
