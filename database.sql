@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INT UNSIGNED NULL,
     description TEXT NULL,
     price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    installment_count INT UNSIGNED NULL,
+    installment_value DECIMAL(10,2) NULL,
     image VARCHAR(255) NULL,
     active TINYINT(1) NOT NULL DEFAULT 1,
     featured TINYINT(1) NOT NULL DEFAULT 0,
@@ -134,7 +136,8 @@ CREATE TABLE IF NOT EXISTS migration_history (
 
 INSERT INTO app_settings (setting_key, setting_value) VALUES
 ('site_logo', 'assets/img/logo.svg'),
-('site_favicon', 'assets/img/logo.svg')
+('site_favicon', 'assets/img/logo.svg'),
+('hero_image', '')
 ON DUPLICATE KEY UPDATE setting_key = VALUES(setting_key);
 
 INSERT INTO categories (name, slug, parent_id, active, sort_order)
